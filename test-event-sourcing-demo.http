@@ -1,0 +1,108 @@
+# Pruebas del Controlador de Demo Event Sourcing
+# Carrito de Compras API - Event Sourcing Demo Testing
+
+### Variables
+@base_url = https://localhost:7257/api
+
+### 1. Generar eventos de muestra para probar el sistema
+POST {{base_url}}/eventsourcingdemo/generar-eventos-muestra
+Accept: application/json
+
+### 2. Crear evento de producto personalizado
+POST {{base_url}}/eventsourcingdemo/crear-producto-evento
+Content-Type: application/json
+
+{
+  "productoId": 100,
+  "nombre": "Teclado Mecánico",
+  "descripcion": "Teclado mecánico para gaming RGB",
+  "precio": 89.99,
+  "stock": 25,
+  "categoria": "Accesorios Gaming"
+}
+
+### 3. Crear evento de carrito personalizado
+POST {{base_url}}/eventsourcingdemo/crear-carrito-evento
+Content-Type: application/json
+
+{
+  "carritoId": "carrito-demo-001",
+  "usuarioId": "user-demo-123"
+}
+
+### 4. Obtener estado del Event Store
+GET {{base_url}}/eventsourcingdemo/estado-event-store
+Accept: application/json
+
+### 5. Crear otro producto para pruebas
+POST {{base_url}}/eventsourcingdemo/crear-producto-evento
+Content-Type: application/json
+
+{
+  "productoId": 101,
+  "nombre": "Monitor 4K",
+  "descripcion": "Monitor 4K 27 pulgadas para productividad",
+  "precio": 299.99,
+  "stock": 15,
+  "categoria": "Monitores"
+}
+
+### 6. Crear otro carrito para pruebas
+POST {{base_url}}/eventsourcingdemo/crear-carrito-evento
+Content-Type: application/json
+
+{
+  "carritoId": "carrito-demo-002",
+  "usuarioId": "user-demo-456"
+}
+
+### Verificación - Obtener todos los eventos después de las pruebas
+GET {{base_url}}/auditoria/eventos
+Accept: application/json
+
+### Verificación - Obtener eventos recientes
+GET {{base_url}}/auditoria/eventos/recientes?horas=1
+Accept: application/json
+
+### Verificación - Obtener estadísticas
+GET {{base_url}}/auditoria/estadisticas
+Accept: application/json
+
+### Ejemplo de respuesta esperada para eventos de muestra:
+# {
+#   "mensaje": "Eventos de muestra generados exitosamente",
+#   "totalEventos": 8,
+#   "tipos": {
+#     "ProductoCreadoEvent": 2,
+#     "ProductoStockCambiadoEvent": 1,
+#     "CarritoCreadoEvent": 1,
+#     "ItemAgregadoAlCarritoEvent": 2,
+#     "UsuarioInicioSesionEvent": 1,
+#     "ErrorSistemaEvent": 1
+#   },
+#   "agregados": {
+#     "1": 2,
+#     "2": 1,
+#     "carrito-001": 3,
+#     "user123": 1,
+#     "sistema": 1
+#   }
+# }
+
+### Ejemplo de respuesta para crear producto evento:
+# {
+#   "mensaje": "Evento de producto creado exitosamente",
+#   "eventoId": "evento-uuid-aqui",
+#   "tipo": "ProductoCreadoEvent",
+#   "agregadoId": "100",
+#   "timestamp": "2024-01-15T10:30:00Z"
+# }
+
+### Ejemplo de respuesta para estado del Event Store:
+# {
+#   "mensaje": "Event Store en funcionamiento",
+#   "tipo": "InMemoryEventStore",
+#   "estado": "Operativo",
+#   "nota": "Para estadísticas detalladas, usar el AuditoriaController",
+#   "timestamp": "2024-01-15T10:30:00Z"
+# }

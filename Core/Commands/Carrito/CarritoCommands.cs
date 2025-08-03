@@ -1,5 +1,6 @@
 using CarritoComprasAPI.Core.Commands;
 using CarritoComprasAPI.Core.Domain;
+using CarritoComprasAPI.Core.Domain.Events;
 using CarritoComprasAPI.Core.Ports;
 using CarritoComprasAPI.Core.Validators;
 
@@ -18,17 +19,20 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
         private readonly ICarritoRepository _carritoRepository;
         private readonly IProductoRepository _productoRepository;
         private readonly ICarritoBusinessValidator _businessValidator;
+        private readonly IDomainEventDispatcher _eventDispatcher;
         private readonly IAppLogger _logger;
 
         public AgregarItemCarritoCommandHandler(
             ICarritoRepository carritoRepository,
             IProductoRepository productoRepository,
             ICarritoBusinessValidator businessValidator,
+            IDomainEventDispatcher eventDispatcher,
             IAppLogger logger)
         {
             _carritoRepository = carritoRepository ?? throw new ArgumentNullException(nameof(carritoRepository));
             _productoRepository = productoRepository ?? throw new ArgumentNullException(nameof(productoRepository));
             _businessValidator = businessValidator ?? throw new ArgumentNullException(nameof(businessValidator));
+            _eventDispatcher = eventDispatcher ?? throw new ArgumentNullException(nameof(eventDispatcher));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -59,8 +63,12 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
                 var carrito = await _carritoRepository.ObtenerPorUsuarioAsync(command.UsuarioId);
                 if (carrito == null)
                 {
-                    carrito = new Domain.Carrito { UsuarioId = command.UsuarioId };
+                    // Usar método factory que dispara el evento CarritoCreado
+                    carrito = Domain.Carrito.Crear(command.UsuarioId);
                     carrito = await _carritoRepository.CrearAsync(carrito);
+                    
+                    // Despachar eventos de creación
+                    await _eventDispatcher.DispatchAndClearEvents(carrito, cancellationToken);
                 }
 
                 // Validar stock disponible
@@ -79,6 +87,9 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
                 // Guardar carrito
                 var carritoActualizado = await _carritoRepository.ActualizarAsync(carrito);
 
+                // Despachar eventos de dominio
+                await _eventDispatcher.DispatchAndClearEvents(carritoActualizado, cancellationToken);
+
                 _logger.LogInformation("Item agregado exitosamente al carrito del usuario {UsuarioId}", command.UsuarioId);
 
                 return carritoActualizado;
@@ -89,15 +100,6 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
                     command.UsuarioId, command.ProductoId, command.Cantidad);
                 throw;
             }
-        }
-
-        private static void ValidarCommand(AgregarItemCarritoCommand command)
-        {
-            if (string.IsNullOrWhiteSpace(command.UsuarioId))
-                throw new ArgumentException("El ID de usuario es requerido");
-
-            if (command.Cantidad <= 0)
-                throw new ArgumentException("La cantidad debe ser mayor a 0");
         }
     }
 
@@ -113,15 +115,18 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
     {
         private readonly ICarritoRepository _carritoRepository;
         private readonly IProductoRepository _productoRepository;
+        private readonly IDomainEventDispatcher _eventDispatcher;
         private readonly IAppLogger _logger;
 
         public ActualizarCantidadItemCommandHandler(
             ICarritoRepository carritoRepository,
             IProductoRepository productoRepository,
+            IDomainEventDispatcher eventDispatcher,
             IAppLogger logger)
         {
             _carritoRepository = carritoRepository ?? throw new ArgumentNullException(nameof(carritoRepository));
             _productoRepository = productoRepository ?? throw new ArgumentNullException(nameof(productoRepository));
+            _eventDispatcher = eventDispatcher ?? throw new ArgumentNullException(nameof(eventDispatcher));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -167,6 +172,9 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
 
                 var carritoActualizado = await _carritoRepository.ActualizarAsync(carrito);
 
+                // Despachar eventos de dominio
+                await _eventDispatcher.DispatchAndClearEvents(carritoActualizado, cancellationToken);
+
                 _logger.LogInformation("Cantidad actualizada exitosamente en el carrito del usuario {UsuarioId}", command.UsuarioId);
 
                 return carritoActualizado;
@@ -196,11 +204,16 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
     public class EliminarItemCarritoCommandHandler : ICommandHandler<EliminarItemCarritoCommand, bool>
     {
         private readonly ICarritoRepository _carritoRepository;
+        private readonly IDomainEventDispatcher _eventDispatcher;
         private readonly IAppLogger _logger;
 
-        public EliminarItemCarritoCommandHandler(ICarritoRepository carritoRepository, IAppLogger logger)
+        public EliminarItemCarritoCommandHandler(
+            ICarritoRepository carritoRepository,
+            IDomainEventDispatcher eventDispatcher,
+            IAppLogger logger)
         {
             _carritoRepository = carritoRepository ?? throw new ArgumentNullException(nameof(carritoRepository));
+            _eventDispatcher = eventDispatcher ?? throw new ArgumentNullException(nameof(eventDispatcher));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -221,7 +234,10 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
                 }
 
                 carrito.EliminarItem(command.ProductoId);
-                await _carritoRepository.ActualizarAsync(carrito);
+                var carritoActualizado = await _carritoRepository.ActualizarAsync(carrito);
+
+                // Despachar eventos de dominio
+                await _eventDispatcher.DispatchAndClearEvents(carritoActualizado, cancellationToken);
 
                 _logger.LogInformation("Item eliminado exitosamente del carrito del usuario {UsuarioId}", command.UsuarioId);
 
@@ -249,11 +265,16 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
     public class VaciarCarritoCommandHandler : ICommandHandler<VaciarCarritoCommand, bool>
     {
         private readonly ICarritoRepository _carritoRepository;
+        private readonly IDomainEventDispatcher _eventDispatcher;
         private readonly IAppLogger _logger;
 
-        public VaciarCarritoCommandHandler(ICarritoRepository carritoRepository, IAppLogger logger)
+        public VaciarCarritoCommandHandler(
+            ICarritoRepository carritoRepository,
+            IDomainEventDispatcher eventDispatcher,
+            IAppLogger logger)
         {
             _carritoRepository = carritoRepository ?? throw new ArgumentNullException(nameof(carritoRepository));
+            _eventDispatcher = eventDispatcher ?? throw new ArgumentNullException(nameof(eventDispatcher));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -273,7 +294,10 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
                 }
 
                 carrito.Vaciar();
-                await _carritoRepository.ActualizarAsync(carrito);
+                var carritoActualizado = await _carritoRepository.ActualizarAsync(carrito);
+
+                // Despachar eventos de dominio
+                await _eventDispatcher.DispatchAndClearEvents(carritoActualizado, cancellationToken);
 
                 _logger.LogInformation("Carrito vaciado exitosamente para el usuario {UsuarioId}", command.UsuarioId);
 

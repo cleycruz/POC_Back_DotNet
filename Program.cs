@@ -5,6 +5,8 @@ using CarritoComprasAPI.Core.Mediator;
 using CarritoComprasAPI.Core.Domain.Events;
 using CarritoComprasAPI.Core.Caching;
 using CarritoComprasAPI.Core.Validators;
+using CarritoComprasAPI.Core.EventSourcing;
+using CarritoComprasAPI.Core.EventSourcing.Store;
 using FluentValidation;
 using System.Reflection;
 
@@ -49,6 +51,22 @@ builder.Services.AddCqrsHandlers();
 
 // Registrar eventos de dominio
 builder.Services.AddDomainEvents();
+
+// Registrar Event Sourcing
+builder.Services.AddSingleton<IEventStore, InMemoryEventStore>();
+builder.Services.AddScoped<IAuditContextProvider, HttpAuditContextProvider>();
+builder.Services.AddScoped<IAuditQueryService, SimpleAuditQueryService>();
+builder.Services.AddHttpContextAccessor(); // Necesario para HttpAuditContextProvider
+
+// Registrar Event Sourcing
+builder.Services.AddSingleton<IEventStore, InMemoryEventStore>();
+builder.Services.AddScoped<IAuditContextProvider, HttpAuditContextProvider>();
+builder.Services.AddScoped<IAuditQueryService, SimpleAuditQueryService>();
+
+// NOTA: Los Domain Event Handlers (incluido el bridge automático) se registran en AddCqrsHandlers()
+
+// Registrar servicios para HttpContext en IAuditContextProvider
+builder.Services.AddHttpContextAccessor();
 
 // Registrar FluentValidation
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());

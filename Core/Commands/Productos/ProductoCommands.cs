@@ -152,6 +152,11 @@ namespace CarritoComprasAPI.Core.Commands.Productos
 
                 var productoActualizado = await _repository.ActualizarAsync(productoExistente);
                 
+                if (productoActualizado == null)
+                {
+                    throw new InvalidOperationException($"Error al actualizar el producto con ID {command.Id}");
+                }
+                
                 // Despachar eventos de dominio
                 await _eventDispatcher.DispatchAndClearEvents(productoActualizado, cancellationToken);
                 

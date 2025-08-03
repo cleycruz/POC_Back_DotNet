@@ -1,5 +1,6 @@
 using CarritoComprasAPI.Core.Commands;
 using CarritoComprasAPI.Core.Queries;
+using CarritoComprasAPI.Core.Domain.Events;
 
 namespace CarritoComprasAPI.Core.Mediator
 {
@@ -80,6 +81,8 @@ namespace CarritoComprasAPI.Core.Mediator
 
         public static IServiceCollection AddCqrsHandlers(this IServiceCollection services)
         {
+            // Registrar Domain Event Handlers
+            RegisterDomainEventHandlers(services);
             // Registrar Command Handlers
             services.AddScoped<Commands.Productos.CrearProductoCommandHandler>();
             services.AddScoped<Commands.Productos.ActualizarProductoCommandHandler>();
@@ -161,6 +164,51 @@ namespace CarritoComprasAPI.Core.Mediator
             
             services.AddScoped<IQueryHandler<Queries.Carrito.ObtenerItemsCarritoQuery, IEnumerable<Queries.Carrito.ItemCarritoDetalleResult>>>(
                 provider => provider.GetRequiredService<Queries.Carrito.ObtenerItemsCarritoQueryHandler>());
+        }
+
+        private static void RegisterDomainEventHandlers(IServiceCollection services)
+        {
+            // Registrar el puente automático para eventos específicos
+            services.AddScoped<EventSourcing.DomainEventToEventStoreBridge>();
+            
+            // Registrar el bridge como handler para eventos específicos de productos
+            services.AddScoped<IDomainEventHandler<Domain.Events.Productos.ProductoCreado>>(
+                provider => provider.GetRequiredService<EventSourcing.DomainEventToEventStoreBridge>());
+            services.AddScoped<IDomainEventHandler<Domain.Events.Productos.ProductoEliminado>>(
+                provider => provider.GetRequiredService<EventSourcing.DomainEventToEventStoreBridge>());
+
+            // Registrar el bridge como handler para eventos específicos de carrito
+            services.AddScoped<IDomainEventHandler<Domain.Events.Carrito.CarritoCreado>>(
+                provider => provider.GetRequiredService<EventSourcing.DomainEventToEventStoreBridge>());
+            services.AddScoped<IDomainEventHandler<Domain.Events.Carrito.ItemAgregadoAlCarrito>>(
+                provider => provider.GetRequiredService<EventSourcing.DomainEventToEventStoreBridge>());
+
+            // Registrar handlers específicos de productos
+            services.AddScoped<EventHandlers.Productos.ProductoCreadoHandler>();
+            services.AddScoped<IDomainEventHandler<Domain.Events.Productos.ProductoCreado>>(
+                provider => provider.GetRequiredService<EventHandlers.Productos.ProductoCreadoHandler>());
+
+            services.AddScoped<EventHandlers.Productos.ProductoEliminadoHandler>();
+            services.AddScoped<IDomainEventHandler<Domain.Events.Productos.ProductoEliminado>>(
+                provider => provider.GetRequiredService<EventHandlers.Productos.ProductoEliminadoHandler>());
+
+            // Registrar handlers específicos de carrito
+            services.AddScoped<EventHandlers.Carrito.CarritoCreadoHandler>();
+            services.AddScoped<IDomainEventHandler<Domain.Events.Carrito.CarritoCreado>>(
+                provider => provider.GetRequiredService<EventHandlers.Carrito.CarritoCreadoHandler>());
+
+            services.AddScoped<EventHandlers.Carrito.ItemAgregadoAlCarritoHandler>();
+            services.AddScoped<IDomainEventHandler<Domain.Events.Carrito.ItemAgregadoAlCarrito>>(
+                provider => provider.GetRequiredService<EventHandlers.Carrito.ItemAgregadoAlCarritoHandler>());
+
+            // Registrar handlers de cache
+            services.AddScoped<EventHandlers.Caching.ProductoCreadoCacheHandler>();
+            services.AddScoped<IDomainEventHandler<Domain.Events.Productos.ProductoCreado>>(
+                provider => provider.GetRequiredService<EventHandlers.Caching.ProductoCreadoCacheHandler>());
+
+            services.AddScoped<EventHandlers.Caching.ItemAgregadoAlCarritoCacheHandler>();
+            services.AddScoped<IDomainEventHandler<Domain.Events.Carrito.ItemAgregadoAlCarrito>>(
+                provider => provider.GetRequiredService<EventHandlers.Caching.ItemAgregadoAlCarritoCacheHandler>());
         }
     }
 }

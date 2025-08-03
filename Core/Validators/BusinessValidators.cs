@@ -171,7 +171,7 @@ namespace CarritoComprasAPI.Core.Validators
             return ValidationResult<bool>.Success(true);
         }
 
-        private async Task<int> GetTotalProductoEnCarritos(int productoId)
+        private Task<int> GetTotalProductoEnCarritos(int productoId)
         {
             // Esta es una implementación simplificada
             // En un escenario real, necesitarías un método en el repositorio para esto
@@ -179,12 +179,12 @@ namespace CarritoComprasAPI.Core.Validators
             {
                 // Simulamos obtener todos los carritos y contar el producto
                 // En producción, esto debería ser una consulta optimizada
-                return 0; // Placeholder - implementar según necesidades específicas
+                return Task.FromResult(0); // Placeholder - implementar según necesidades específicas
             }
             catch (Exception ex)
             {
                 _logger.LogError($"Error al obtener total de producto {productoId} en carritos: {ex.Message}");
-                return 0;
+                return Task.FromResult(0);
             }
         }
     }

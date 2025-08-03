@@ -1,0 +1,144 @@
+# Pruebas del Controlador de Auditoría
+# Carrito de Compras API - Event Sourcing Testing
+
+### Variables
+@base_url = https://localhost:7257/api
+
+### 1. Obtener todos los eventos de auditoría
+GET {{base_url}}/auditoria/eventos
+Accept: application/json
+
+### 2. Obtener eventos con paginación
+GET {{base_url}}/auditoria/eventos?skip=0&take=10
+Accept: application/json
+
+### 3. Obtener eventos por tipo específico
+GET {{base_url}}/auditoria/eventos/tipo/ProductoCreadoEvent
+Accept: application/json
+
+### 4. Obtener eventos por tipo con filtro de fechas
+GET {{base_url}}/auditoria/eventos/tipo/CarritoCreadoEvent?desde=2024-01-01&hasta=2024-12-31
+Accept: application/json
+
+### 5. Obtener eventos por usuario
+GET {{base_url}}/auditoria/eventos/usuario/admin
+Accept: application/json
+
+### 6. Obtener eventos por usuario con filtro de fechas
+GET {{base_url}}/auditoria/eventos/usuario/admin?desde=2024-01-01
+Accept: application/json
+
+### 7. Obtener historial de un agregado específico (producto)
+GET {{base_url}}/auditoria/eventos/agregado/producto-123
+Accept: application/json
+
+### 8. Obtener eventos recientes (últimas 24 horas)
+GET {{base_url}}/auditoria/eventos/recientes
+Accept: application/json
+
+### 9. Obtener eventos recientes personalizados (últimas 48 horas)
+GET {{base_url}}/auditoria/eventos/recientes?horas=48
+Accept: application/json
+
+### 10. Generar reporte de auditoría para período específico
+GET {{base_url}}/auditoria/reporte?desde=2024-01-01&hasta=2024-12-31
+Accept: application/json
+
+### 11. Obtener estadísticas del sistema de auditoría
+GET {{base_url}}/auditoria/estadisticas
+Accept: application/json
+
+### 12. Búsqueda avanzada de eventos - Buscar por tipo de evento
+POST {{base_url}}/auditoria/buscar
+Content-Type: application/json
+
+{
+  "tipoEvento": "Producto",
+  "skip": 0,
+  "take": 50
+}
+
+### 13. Búsqueda avanzada - Buscar por usuario específico
+POST {{base_url}}/auditoria/buscar
+Content-Type: application/json
+
+{
+  "usuarioId": "admin",
+  "fechaDesde": "2024-01-01T00:00:00Z",
+  "skip": 0,
+  "take": 100
+}
+
+### 14. Búsqueda avanzada - Buscar por agregado y fecha
+POST {{base_url}}/auditoria/buscar
+Content-Type: application/json
+
+{
+  "agregadoId": "carrito-456",
+  "fechaDesde": "2024-01-01T00:00:00Z",
+  "fechaHasta": "2024-12-31T23:59:59Z",
+  "skip": 0,
+  "take": 25
+}
+
+### 15. Búsqueda avanzada - Buscar por IP address
+POST {{base_url}}/auditoria/buscar
+Content-Type: application/json
+
+{
+  "ipAddress": "192.168.1.100",
+  "skip": 0,
+  "take": 50
+}
+
+### 16. Búsqueda avanzada - Filtros múltiples
+POST {{base_url}}/auditoria/buscar
+Content-Type: application/json
+
+{
+  "tipoEvento": "Carrito",
+  "usuarioId": "admin",
+  "fechaDesde": "2024-01-01T00:00:00Z",
+  "fechaHasta": "2024-12-31T23:59:59Z",
+  "ipAddress": "localhost",
+  "skip": 0,
+  "take": 100
+}
+
+### Ejemplo de respuesta esperada para estadísticas:
+# {
+#   "eventosUltimas24Horas": 15,
+#   "eventosUltimos7Dias": 42,
+#   "tiposEventosMasComunes": {
+#     "ProductoCreadoEvent": 8,
+#     "CarritoCreadoEvent": 5,
+#     "ItemAgregadoAlCarritoEvent": 12
+#   },
+#   "usuariosMasActivos": {
+#     "admin": 25,
+#     "user123": 10,
+#     "testuser": 7
+#   },
+#   "ultimoEvento": "2024-01-15T10:30:00Z"
+# }
+
+### Ejemplo de respuesta esperada para reporte:
+# {
+#   "periodoDesde": "2024-01-01T00:00:00Z",
+#   "periodoHasta": "2024-12-31T23:59:59Z", 
+#   "totalEventos": 150,
+#   "eventosPorTipo": {
+#     "ProductoCreadoEvent": 30,
+#     "CarritoCreadoEvent": 20,
+#     "ItemAgregadoAlCarritoEvent": 45
+#   },
+#   "eventosPorUsuario": {
+#     "admin": 75,
+#     "user123": 45,
+#     "testuser": 30
+#   },
+#   "eventosPorDia": {
+#     "2024-01-01": 5,
+#     "2024-01-02": 8
+#   }
+# }
