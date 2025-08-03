@@ -74,7 +74,7 @@ namespace CarritoComprasAPI.Core.Queries.Productos
                 }
                 else
                 {
-                    _logger.LogInformation("Producto {ProductoNombre} encontrado", producto.Nombre);
+                    _logger.LogInformation("Producto {ProductoNombre} encontrado", producto.Nombre.Value);
                 }
 
                 return producto;
@@ -175,28 +175,28 @@ namespace CarritoComprasAPI.Core.Queries.Productos
                 if (!string.IsNullOrWhiteSpace(query.Nombre))
                 {
                     productosFiltrados = productosFiltrados.Where(p => 
-                        p.Nombre.Contains(query.Nombre, StringComparison.OrdinalIgnoreCase));
+                        p.Nombre.Value.Contains(query.Nombre, StringComparison.OrdinalIgnoreCase));
                 }
 
                 if (!string.IsNullOrWhiteSpace(query.Categoria))
                 {
                     productosFiltrados = productosFiltrados.Where(p => 
-                        p.Categoria.Contains(query.Categoria, StringComparison.OrdinalIgnoreCase));
+                        p.CategoriaProducto.Value.Contains(query.Categoria, StringComparison.OrdinalIgnoreCase));
                 }
 
                 if (query.PrecioMinimo.HasValue)
                 {
-                    productosFiltrados = productosFiltrados.Where(p => p.Precio >= query.PrecioMinimo.Value);
+                    productosFiltrados = productosFiltrados.Where(p => p.PrecioProducto.Value >= query.PrecioMinimo.Value);
                 }
 
                 if (query.PrecioMaximo.HasValue)
                 {
-                    productosFiltrados = productosFiltrados.Where(p => p.Precio <= query.PrecioMaximo.Value);
+                    productosFiltrados = productosFiltrados.Where(p => p.PrecioProducto.Value <= query.PrecioMaximo.Value);
                 }
 
                 if (query.EnStock.HasValue && query.EnStock.Value)
                 {
-                    productosFiltrados = productosFiltrados.Where(p => p.Stock > 0);
+                    productosFiltrados = productosFiltrados.Where(p => p.StockProducto.Value > 0);
                 }
 
                 var totalElementos = productosFiltrados.Count();

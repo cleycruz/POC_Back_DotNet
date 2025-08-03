@@ -216,12 +216,12 @@ namespace CarritoComprasAPI.Core.Queries.Carrito
                     {
                         itemsDetallados.Add(new ItemCarritoDetalleResult(
                             item.ProductoId,
-                            producto.Nombre,
+                            producto.Nombre.Value,
                             producto.Descripcion,
                             item.PrecioUnitario,
-                            item.Cantidad,
+                            item.CantidadItem.Value,
                             item.Subtotal,
-                            producto.Stock,
+                            producto.StockProducto.Value,
                             item.FechaAgregado
                         ));
                     }

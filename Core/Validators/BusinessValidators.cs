@@ -42,7 +42,7 @@ namespace CarritoComprasAPI.Core.Validators
 
             // Validar nombre único
             var productos = await _productoRepository.ObtenerTodosAsync();
-            if (productos.Any(p => p.Nombre.Equals(nombre, StringComparison.OrdinalIgnoreCase)))
+            if (productos.Any(p => p.Nombre.Value.Equals(nombre, StringComparison.OrdinalIgnoreCase)))
             {
                 errors.Add($"Ya existe un producto con el nombre '{nombre}'");
             }
@@ -82,7 +82,7 @@ namespace CarritoComprasAPI.Core.Validators
 
             // Validar nombre único (excluyendo el producto actual)
             var productos = await _productoRepository.ObtenerTodosAsync();
-            if (productos.Any(p => p.Id != id && p.Nombre.Equals(nombre, StringComparison.OrdinalIgnoreCase)))
+            if (productos.Any(p => p.Id != id && p.Nombre.Value.Equals(nombre, StringComparison.OrdinalIgnoreCase)))
             {
                 errors.Add($"Ya existe otro producto con el nombre '{nombre}'");
             }
@@ -100,7 +100,7 @@ namespace CarritoComprasAPI.Core.Validators
             }
 
             // Validar que no se reduzca el stock por debajo de lo que está en carritos
-            if (stock < producto.Stock)
+            if (stock < producto.StockProducto.Value)
             {
                 var carritoItemsCount = await GetTotalProductoEnCarritos(id);
                 if (stock < carritoItemsCount)
@@ -157,9 +157,9 @@ namespace CarritoComprasAPI.Core.Validators
                 return ValidationResult<bool>.Failure(errors);
             }
 
-            if (producto.Stock < cantidadRequerida)
+            if (producto.StockProducto.Value < cantidadRequerida)
             {
-                errors.Add($"Stock insuficiente. Disponible: {producto.Stock}, Requerido: {cantidadRequerida}");
+                errors.Add($"Stock insuficiente. Disponible: {producto.StockProducto.Value}, Requerido: {cantidadRequerida}");
             }
 
             if (errors.Any())
@@ -248,10 +248,10 @@ namespace CarritoComprasAPI.Core.Validators
                 // Validar cantidad total del producto si ya existe
                 if (itemExistente != null)
                 {
-                    var nuevaCantidadTotal = itemExistente.Cantidad + cantidad;
+                    var nuevaCantidadTotal = itemExistente.CantidadItem.Value + cantidad;
                     if (nuevaCantidadTotal > 100) // Límite por producto
                     {
-                        errors.Add($"No se puede agregar {cantidad} unidades. Ya tienes {itemExistente.Cantidad} y el límite es 100 por producto");
+                        errors.Add($"No se puede agregar {cantidad} unidades. Ya tienes {itemExistente.CantidadItem.Value} y el límite es 100 por producto");
                     }
                 }
 
@@ -259,7 +259,7 @@ namespace CarritoComprasAPI.Core.Validators
                 var producto = await _productoRepository.ObtenerPorIdAsync(productoId);
                 if (producto != null)
                 {
-                    var valorAdicional = producto.Precio * cantidad;
+                    var valorAdicional = producto.PrecioProducto.Value * cantidad;
                     if (carrito.Total + valorAdicional > MAX_CART_VALUE)
                     {
                         errors.Add($"No se puede agregar el producto. El valor total del carrito excedería ${MAX_CART_VALUE:N2}");

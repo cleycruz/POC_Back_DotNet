@@ -14,10 +14,12 @@ namespace CarritoComprasAPI.Core.EventSourcing
         IDomainEventHandler<ProductoCreado>,
         IDomainEventHandler<ProductoEliminado>,
         IDomainEventHandler<CarritoCreado>,
-        IDomainEventHandler<ItemAgregadoAlCarrito>
+        IDomainEventHandler<ItemAgregadoAlCarrito>,
+        IDomainEventHandler<ItemEliminadoDelCarrito>,
+        IDomainEventHandler<CarritoVaciado>
     {
         private readonly IEventStore _eventStore;
-        private readonly IAuditContextProvider _auditContextProvider;
+        private readonly IAuditContextProvider _auditContextProvider; // Para uso futuro en contexto de auditoría
         private readonly IAppLogger _logger;
 
         public DomainEventToEventStoreBridge(
@@ -63,6 +65,22 @@ namespace CarritoComprasAPI.Core.EventSourcing
         }
 
         /// <summary>
+        /// Maneja evento ItemEliminadoDelCarrito
+        /// </summary>
+        public async Task Handle(ItemEliminadoDelCarrito domainEvent, CancellationToken cancellationToken = default)
+        {
+            await HandleGeneric(domainEvent, cancellationToken);
+        }
+
+        /// <summary>
+        /// Maneja evento CarritoVaciado
+        /// </summary>
+        public async Task Handle(CarritoVaciado domainEvent, CancellationToken cancellationToken = default)
+        {
+            await HandleGeneric(domainEvent, cancellationToken);
+        }
+
+        /// <summary>
         /// Lógica genérica para manejar cualquier Domain Event convirtiéndolo automáticamente a Event Store Event
         /// </summary>
         private async Task HandleGeneric(DomainEvent domainEvent, CancellationToken cancellationToken = default)
@@ -71,11 +89,8 @@ namespace CarritoComprasAPI.Core.EventSourcing
             {
                 _logger.LogInformation("[AUDIT-BRIDGE] Interceptando Domain Event: {EventType}", domainEvent.GetType().Name);
 
-                // Obtener contexto de auditoría actual
-                var auditContext = _auditContextProvider.GetCurrentContext();
-
                 // Convertir Domain Event a Event Store Event
-                var eventStoreEvent = ConvertToAuditEvent(domainEvent, auditContext);
+                var eventStoreEvent = ConvertToAuditEvent(domainEvent);
 
                 if (eventStoreEvent != null)
                 {
@@ -101,7 +116,7 @@ namespace CarritoComprasAPI.Core.EventSourcing
         /// <summary>
         /// Convierte un Domain Event específico a su correspondiente Event Store Event
         /// </summary>
-        private EventBase? ConvertToAuditEvent(DomainEvent domainEvent, AuditContext auditContext)
+        private EventBase? ConvertToAuditEvent(DomainEvent domainEvent)
         {
             return domainEvent switch
             {
@@ -166,8 +181,18 @@ namespace CarritoComprasAPI.Core.EventSourcing
                     itemEliminado.ProductoId,
                     itemEliminado.NombreProducto,
                     itemEliminado.Cantidad,
-                    0, // precioUnitario - no disponible en Domain Event
-                    "Eliminado por usuario",
+                    itemEliminado.SubtotalPerdido,
+                    "Eliminado por usuario", // motivo
+                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                ),
+
+                CarritoVaciado carritoVaciado => new CarritoVaciadoEvent(
+                    carritoVaciado.UsuarioId, // carritoId
+                    carritoVaciado.UsuarioId,
+                    carritoVaciado.CantidadItemsEliminados,
+                    carritoVaciado.TotalPerdido,
+                    "Vaciado por usuario", // motivo
+                    new List<Events.ItemCarritoInfo>(), // itemsEliminados - lista vacía por simplicidad
                     DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
                 ),
 
@@ -195,7 +220,7 @@ namespace CarritoComprasAPI.Core.EventSourcing
         /// <summary>
         /// Genera un aggregate ID para el Domain Event
         /// </summary>
-        private string GenerateAggregateId(DomainEvent domainEvent)
+        private static string GenerateAggregateId(DomainEvent domainEvent)
         {
             return domainEvent switch
             {
@@ -205,6 +230,7 @@ namespace CarritoComprasAPI.Core.EventSourcing
                 CarritoCreado cc => $"carrito-{cc.UsuarioId}",
                 ItemAgregadoAlCarrito iac => $"carrito-{iac.UsuarioId}",
                 ItemEliminadoDelCarrito iec => $"carrito-{iec.UsuarioId}",
+                CarritoVaciado cv => $"carrito-{cv.UsuarioId}",
                 CantidadItemCarritoActualizada cica => $"carrito-{cica.UsuarioId}",
                 _ => $"domain-event-{domainEvent.Id}"
             };
@@ -218,7 +244,7 @@ namespace CarritoComprasAPI.Core.EventSourcing
             return domainEvent switch
             {
                 ProductoCreado or ProductoActualizado or ProductoEliminado => "Producto",
-                CarritoCreado or ItemAgregadoAlCarrito or ItemEliminadoDelCarrito or CantidadItemCarritoActualizada => "Carrito",
+                CarritoCreado or ItemAgregadoAlCarrito or ItemEliminadoDelCarrito or CarritoVaciado or CantidadItemCarritoActualizada => "Carrito",
                 _ => domainEvent.GetType().Name.Replace("Event", "").Replace("Evento", "")
             };
         }

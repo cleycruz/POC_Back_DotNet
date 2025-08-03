@@ -1,24 +1,23 @@
-using System.ComponentModel.DataAnnotations;
 using CarritoComprasAPI.Core.Domain.Events;
 using CarritoComprasAPI.Core.Domain.Events.Carrito;
+using CarritoComprasAPI.Core.Domain.ValueObjects;
 
 namespace CarritoComprasAPI.Core.Domain
 {
     public class Carrito : DomainEntity
     {
-        public int Id { get; set; }
+        private readonly List<CarritoItem> _items = new();
         
-        [Required(ErrorMessage = "El ID de usuario es requerido")]
-        public string UsuarioId { get; set; } = string.Empty;
+        public int Id { get; internal set; }
+        public UsuarioId UsuarioCarrito { get; internal set; } = UsuarioId.Crear("user");
+        public IReadOnlyList<CarritoItem> Items => _items.AsReadOnly();
         
-        public List<CarritoItem> Items { get; set; } = new List<CarritoItem>();
+        public decimal Total => _items.Sum(item => item.Subtotal);
+        public int CantidadItems => _items.Count;
+        public int CantidadProductos => _items.Sum(item => item.CantidadItem.Value);
         
-        public decimal Total => Items.Sum(item => item.Subtotal);
-        public int CantidadItems => Items.Count;
-        public int CantidadProductos => Items.Sum(item => item.Cantidad);
-        
-        public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
-        public DateTime FechaActualizacion { get; set; } = DateTime.UtcNow;
+        public DateTime FechaCreacion { get; internal set; } = DateTime.UtcNow;
+        public DateTime FechaActualizacion { get; internal set; } = DateTime.UtcNow;
 
         // Métodos de dominio
         public void AgregarItem(Producto producto, int cantidad)
@@ -33,23 +32,23 @@ namespace CarritoComprasAPI.Core.Domain
             {
                 // Publicar evento de stock insuficiente
                 RaiseDomainEvent(new ProductoSinStockSuficiente(
-                    UsuarioId, producto.Id, producto.Nombre, cantidad, producto.Stock));
-                throw new InvalidOperationException($"Stock insuficiente para el producto {producto.Nombre}");
+                    UsuarioCarrito.Value, producto.Id, producto.Nombre.Value, cantidad, producto.StockProducto.Value));
+                throw new InvalidOperationException($"Stock insuficiente para el producto {producto.Nombre.Value}");
             }
 
             var totalAnterior = Total;
-            var itemExistente = Items.FirstOrDefault(i => i.ProductoId == producto.Id);
+            var itemExistente = _items.FirstOrDefault(i => i.ProductoId == producto.Id);
             
             if (itemExistente != null)
             {
-                var cantidadAnterior = itemExistente.Cantidad;
+                var cantidadAnterior = itemExistente.CantidadItem.Value;
                 var subtotalAnterior = itemExistente.Subtotal;
-                itemExistente.ActualizarCantidad(itemExistente.Cantidad + cantidad);
+                itemExistente.ActualizarCantidad(itemExistente.CantidadItem.Value + cantidad);
 
                 // Publicar evento de cantidad actualizada
                 RaiseDomainEvent(new CantidadItemCarritoActualizada(
-                    UsuarioId, producto.Id, producto.Nombre, 
-                    cantidadAnterior, itemExistente.Cantidad,
+                    UsuarioCarrito.Value, producto.Id, producto.Nombre.Value, 
+                    cantidadAnterior, itemExistente.CantidadItem.Value,
                     subtotalAnterior, itemExistente.Subtotal));
             }
             else
@@ -58,27 +57,27 @@ namespace CarritoComprasAPI.Core.Domain
                 {
                     ProductoId = producto.Id,
                     Producto = producto,
-                    Cantidad = cantidad,
-                    PrecioUnitario = producto.Precio
+                    CantidadItem = Cantidad.Crear(cantidad),
+                    PrecioUnitario = producto.PrecioProducto
                 };
-                Items.Add(nuevoItem);
+                _items.Add(nuevoItem);
 
                 // Publicar evento de item agregado
                 RaiseDomainEvent(new ItemAgregadoAlCarrito(
-                    UsuarioId, producto.Id, producto.Nombre, 
-                    cantidad, producto.Precio, nuevoItem.Subtotal));
+                    UsuarioCarrito.Value, producto.Id, producto.Nombre.Value, 
+                    cantidad, producto.PrecioProducto.Value, nuevoItem.Subtotal));
             }
 
             FechaActualizacion = DateTime.UtcNow;
 
             // Publicar evento de total actualizado
             RaiseDomainEvent(new TotalCarritoActualizado(
-                UsuarioId, totalAnterior, Total, CantidadItems));
+                UsuarioCarrito.Value, totalAnterior, Total, CantidadItems));
         }
 
         public void ActualizarCantidadItem(int productoId, int nuevaCantidad)
         {
-            var item = Items.FirstOrDefault(i => i.ProductoId == productoId);
+            var item = _items.FirstOrDefault(i => i.ProductoId == productoId);
             if (item == null)
                 throw new InvalidOperationException($"El producto con ID {productoId} no está en el carrito");
 
@@ -89,7 +88,7 @@ namespace CarritoComprasAPI.Core.Domain
             }
 
             var totalAnterior = Total;
-            var cantidadAnterior = item.Cantidad;
+            var cantidadAnterior = item.CantidadItem.Value;
             var subtotalAnterior = item.Subtotal;
             
             item.ActualizarCantidad(nuevaCantidad);
@@ -97,60 +96,60 @@ namespace CarritoComprasAPI.Core.Domain
 
             // Publicar evento de cantidad actualizada
             RaiseDomainEvent(new CantidadItemCarritoActualizada(
-                UsuarioId, productoId, item.Producto?.Nombre ?? "Producto desconocido",
+                UsuarioCarrito.Value, productoId, item.Producto?.Nombre ?? "Producto desconocido",
                 cantidadAnterior, nuevaCantidad, subtotalAnterior, item.Subtotal));
 
             // Publicar evento de total actualizado
             RaiseDomainEvent(new TotalCarritoActualizado(
-                UsuarioId, totalAnterior, Total, CantidadItems));
+                UsuarioCarrito.Value, totalAnterior, Total, CantidadItems));
         }
 
         public void EliminarItem(int productoId)
         {
-            var item = Items.FirstOrDefault(i => i.ProductoId == productoId);
+            var item = _items.FirstOrDefault(i => i.ProductoId == productoId);
             if (item != null)
             {
                 var totalAnterior = Total;
-                var nombreProducto = item.Producto?.Nombre ?? "Producto desconocido";
-                var cantidad = item.Cantidad;
+                var nombreProducto = item.Producto?.Nombre.Value ?? "Producto desconocido";
+                var cantidad = item.CantidadItem.Value;
                 var subtotalPerdido = item.Subtotal;
 
-                Items.Remove(item);
+                _items.Remove(item);
                 FechaActualizacion = DateTime.UtcNow;
 
                 // Publicar evento de item eliminado
                 RaiseDomainEvent(new ItemEliminadoDelCarrito(
-                    UsuarioId, productoId, nombreProducto, cantidad, subtotalPerdido));
+                    UsuarioCarrito.Value, productoId, nombreProducto, cantidad, subtotalPerdido));
 
                 // Publicar evento de total actualizado
                 RaiseDomainEvent(new TotalCarritoActualizado(
-                    UsuarioId, totalAnterior, Total, CantidadItems));
+                    UsuarioCarrito.Value, totalAnterior, Total, CantidadItems));
             }
         }
 
         public void Vaciar()
         {
-            if (!Items.Any()) return;
+            if (!_items.Any()) return;
 
-            var cantidadItemsEliminados = Items.Count;
+            var cantidadItemsEliminados = _items.Count;
             var totalPerdido = Total;
 
-            Items.Clear();
+            _items.Clear();
             FechaActualizacion = DateTime.UtcNow;
 
             // Publicar evento de carrito vaciado
             RaiseDomainEvent(new CarritoVaciado(
-                UsuarioId, cantidadItemsEliminados, totalPerdido));
+                UsuarioCarrito.Value, cantidadItemsEliminados, totalPerdido));
         }
 
         public bool TieneItems()
         {
-            return Items.Any();
+            return _items.Any();
         }
 
         public CarritoItem? ObtenerItem(int productoId)
         {
-            return Items.FirstOrDefault(i => i.ProductoId == productoId);
+            return _items.FirstOrDefault(i => i.ProductoId == productoId);
         }
 
         /// <summary>
@@ -158,9 +157,12 @@ namespace CarritoComprasAPI.Core.Domain
         /// </summary>
         public static Carrito Crear(string usuarioId)
         {
+            if (string.IsNullOrWhiteSpace(usuarioId))
+                throw new ArgumentException("El ID de usuario es requerido", nameof(usuarioId));
+
             var carrito = new Carrito
             {
-                UsuarioId = usuarioId,
+                UsuarioCarrito = UsuarioId.Crear(usuarioId),
                 FechaCreacion = DateTime.UtcNow,
                 FechaActualizacion = DateTime.UtcNow
             };
@@ -181,7 +183,7 @@ namespace CarritoComprasAPI.Core.Domain
             if (tiempoSinActividad > tiempoLimite && TieneItems())
             {
                 RaiseDomainEvent(new CarritoAbandonado(
-                    UsuarioId, CantidadItems, Total, FechaActualizacion, tiempoSinActividad));
+                    UsuarioCarrito.Value, CantidadItems, Total, FechaActualizacion, tiempoSinActividad));
             }
         }
     }

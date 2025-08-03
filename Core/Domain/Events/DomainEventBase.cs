@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace CarritoComprasAPI.Core.Domain.Events
 {
     /// <summary>
@@ -24,7 +22,6 @@ namespace CarritoComprasAPI.Core.Domain.Events
     {
         private readonly List<DomainEvent> _domainEvents = new();
 
-        [NotMapped]
         public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
         protected void RaiseDomainEvent(DomainEvent domainEvent)

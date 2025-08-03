@@ -10,7 +10,7 @@ namespace CarritoComprasAPI.Adapters.Secondary
 
         public Task<Carrito?> ObtenerPorUsuarioAsync(string usuarioId)
         {
-            var carrito = _carritos.FirstOrDefault(c => c.UsuarioId == usuarioId);
+            var carrito = _carritos.FirstOrDefault(c => c.UsuarioCarrito.Value == usuarioId);
             return Task.FromResult(carrito);
         }
 
@@ -36,7 +36,7 @@ namespace CarritoComprasAPI.Adapters.Secondary
 
         public Task<bool> EliminarAsync(string usuarioId)
         {
-            var carrito = _carritos.FirstOrDefault(c => c.UsuarioId == usuarioId);
+            var carrito = _carritos.FirstOrDefault(c => c.UsuarioCarrito.Value == usuarioId);
             if (carrito == null)
                 return Task.FromResult(false);
 
@@ -46,7 +46,7 @@ namespace CarritoComprasAPI.Adapters.Secondary
 
         public Task<bool> ExisteAsync(string usuarioId)
         {
-            var existe = _carritos.Any(c => c.UsuarioId == usuarioId);
+            var existe = _carritos.Any(c => c.UsuarioCarrito.Value == usuarioId);
             return Task.FromResult(existe);
         }
     }

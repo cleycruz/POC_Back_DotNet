@@ -182,6 +182,10 @@ namespace CarritoComprasAPI.Core.Mediator
                 provider => provider.GetRequiredService<EventSourcing.DomainEventToEventStoreBridge>());
             services.AddScoped<IDomainEventHandler<Domain.Events.Carrito.ItemAgregadoAlCarrito>>(
                 provider => provider.GetRequiredService<EventSourcing.DomainEventToEventStoreBridge>());
+            services.AddScoped<IDomainEventHandler<Domain.Events.Carrito.ItemEliminadoDelCarrito>>(
+                provider => provider.GetRequiredService<EventSourcing.DomainEventToEventStoreBridge>());
+            services.AddScoped<IDomainEventHandler<Domain.Events.Carrito.CarritoVaciado>>(
+                provider => provider.GetRequiredService<EventSourcing.DomainEventToEventStoreBridge>());
 
             // Registrar handlers específicos de productos
             services.AddScoped<EventHandlers.Productos.ProductoCreadoHandler>();

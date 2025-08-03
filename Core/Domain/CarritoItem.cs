@@ -1,25 +1,17 @@
-using System.ComponentModel.DataAnnotations;
+using CarritoComprasAPI.Core.Domain.ValueObjects;
 
 namespace CarritoComprasAPI.Core.Domain
 {
     public class CarritoItem
     {
-        public int Id { get; set; }
+        public int Id { get; internal set; }
+        public int ProductoId { get; internal set; }
+        public Producto? Producto { get; internal set; }
+        public Cantidad CantidadItem { get; internal set; } = Cantidad.Crear(1);
+        public Precio PrecioUnitario { get; internal set; } = Precio.Crear(1.0m);
         
-        [Required]
-        public int ProductoId { get; set; }
-        
-        public Producto? Producto { get; set; }
-        
-        [Range(1, int.MaxValue, ErrorMessage = "La cantidad debe ser mayor a 0")]
-        public int Cantidad { get; set; }
-        
-        [Range(0.01, double.MaxValue, ErrorMessage = "El precio unitario debe ser mayor a 0")]
-        public decimal PrecioUnitario { get; set; }
-        
-        public decimal Subtotal => Cantidad * PrecioUnitario;
-        
-        public DateTime FechaAgregado { get; set; } = DateTime.UtcNow;
+        public decimal Subtotal => CantidadItem.Value * PrecioUnitario.Value;
+        public DateTime FechaAgregado { get; internal set; } = DateTime.UtcNow;
 
         // Métodos de dominio
         public void ActualizarCantidad(int nuevaCantidad)
@@ -27,7 +19,7 @@ namespace CarritoComprasAPI.Core.Domain
             if (nuevaCantidad <= 0)
                 throw new ArgumentException("La cantidad debe ser mayor a 0", nameof(nuevaCantidad));
             
-            Cantidad = nuevaCantidad;
+            CantidadItem = Cantidad.Crear(nuevaCantidad);
         }
 
         public void ActualizarPrecio(decimal nuevoPrecio)
@@ -35,7 +27,7 @@ namespace CarritoComprasAPI.Core.Domain
             if (nuevoPrecio <= 0)
                 throw new ArgumentException("El precio debe ser mayor a 0", nameof(nuevoPrecio));
             
-            PrecioUnitario = nuevoPrecio;
+            PrecioUnitario = Precio.Crear(nuevoPrecio);
         }
 
         public bool EsDelProducto(int productoId)

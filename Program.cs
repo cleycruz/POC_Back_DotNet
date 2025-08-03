@@ -1,5 +1,4 @@
 using CarritoComprasAPI.Core.Ports;
-using CarritoComprasAPI.Core.UseCases;
 using CarritoComprasAPI.Adapters.Secondary;
 using CarritoComprasAPI.Core.Mediator;
 using CarritoComprasAPI.Core.Domain.Events;
@@ -41,11 +40,7 @@ builder.Services.AddSingleton<IAppLogger, ConsoleLogger>();
 // Registrar servicios de caché
 builder.Services.AddMemoryCache(); // Esto registra IMemoryCache
 
-// Casos de uso (core business logic) - mantenemos para compatibilidad
-builder.Services.AddScoped<IProductoUseCases, ProductoUseCases>();
-builder.Services.AddScoped<ICarritoUseCases, CarritoUseCases>();
-
-// Registrar CQRS
+// Registrar CQRS (reemplaza los casos de uso tradicionales)
 builder.Services.AddSimpleMediator();
 builder.Services.AddCqrsHandlers();
 
@@ -58,15 +53,7 @@ builder.Services.AddScoped<IAuditContextProvider, HttpAuditContextProvider>();
 builder.Services.AddScoped<IAuditQueryService, SimpleAuditQueryService>();
 builder.Services.AddHttpContextAccessor(); // Necesario para HttpAuditContextProvider
 
-// Registrar Event Sourcing
-builder.Services.AddSingleton<IEventStore, InMemoryEventStore>();
-builder.Services.AddScoped<IAuditContextProvider, HttpAuditContextProvider>();
-builder.Services.AddScoped<IAuditQueryService, SimpleAuditQueryService>();
-
 // NOTA: Los Domain Event Handlers (incluido el bridge automático) se registran en AddCqrsHandlers()
-
-// Registrar servicios para HttpContext en IAuditContextProvider
-builder.Services.AddHttpContextAccessor();
 
 // Registrar FluentValidation
 builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());

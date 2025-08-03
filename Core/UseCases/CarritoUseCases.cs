@@ -32,7 +32,7 @@ namespace CarritoComprasAPI.Core.UseCases
                 if (carrito == null)
                 {
                     _logger.LogInformation("Carrito no encontrado para usuario {UsuarioId}, creando nuevo carrito", usuarioId);
-                    carrito = new Carrito { UsuarioId = usuarioId };
+                    carrito = Carrito.Crear(usuarioId);
                     carrito = await _carritoRepository.CrearAsync(carrito);
                 }
 
@@ -69,13 +69,13 @@ namespace CarritoComprasAPI.Core.UseCases
                 var carrito = await ObtenerCarritoAsync(usuarioId);
 
                 // Validar stock disponible
-                var cantidadEnCarrito = carrito.ObtenerItem(productoId)?.Cantidad ?? 0;
+                var cantidadEnCarrito = carrito.ObtenerItem(productoId)?.CantidadItem.Value ?? 0;
                 var cantidadTotal = cantidadEnCarrito + cantidad;
                 
                 if (!producto.TieneStock(cantidadTotal))
                 {
                     throw new InvalidOperationException(
-                        $"Stock insuficiente. Stock disponible: {producto.Stock}, cantidad en carrito: {cantidadEnCarrito}, cantidad solicitada: {cantidad}");
+                        $"Stock insuficiente. Stock disponible: {producto.StockProducto.Value}, cantidad en carrito: {cantidadEnCarrito}, cantidad solicitada: {cantidad}");
                 }
 
                 // Agregar item al carrito
@@ -128,7 +128,7 @@ namespace CarritoComprasAPI.Core.UseCases
                 if (!producto.TieneStock(cantidad))
                 {
                     throw new InvalidOperationException(
-                        $"Stock insuficiente. Stock disponible: {producto.Stock}, cantidad solicitada: {cantidad}");
+                        $"Stock insuficiente. Stock disponible: {producto.StockProducto.Value}, cantidad solicitada: {cantidad}");
                 }
 
                 // Actualizar cantidad

@@ -5,14 +5,27 @@ namespace CarritoComprasAPI.Adapters.Secondary
 {
     public class InMemoryProductoRepository : IProductoRepository
     {
-        private static readonly List<Producto> _productos = new()
-        {
-            new Producto { Id = 1, Nombre = "Laptop Dell XPS 13", Descripcion = "Laptop premium Dell XPS 13", Precio = 1299.99m, Stock = 10, Categoria = "Electrónicos" },
-            new Producto { Id = 2, Nombre = "Mouse Logitech MX Master", Descripcion = "Mouse inalámbrico Logitech MX Master", Precio = 89.99m, Stock = 25, Categoria = "Accesorios" },
-            new Producto { Id = 3, Nombre = "Teclado Mecánico RGB", Descripcion = "Teclado mecánico con iluminación RGB", Precio = 149.99m, Stock = 15, Categoria = "Accesorios" },
-            new Producto { Id = 4, Nombre = "Monitor 4K 27\"", Descripcion = "Monitor 4K de 27 pulgadas", Precio = 399.99m, Stock = 8, Categoria = "Electrónicos" }
-        };
+        private static readonly List<Producto> _productos;
         private static int _nextId = 5;
+
+        static InMemoryProductoRepository()
+        {
+            var productos = new List<Producto>
+            {
+                Producto.Crear("Laptop Dell XPS 13", "Laptop premium Dell XPS 13", 1299.99m, 10, "Electrónicos"),
+                Producto.Crear("Mouse Logitech MX Master", "Mouse inalámbrico Logitech MX Master", 89.99m, 25, "Accesorios"),
+                Producto.Crear("Teclado Mecánico RGB", "Teclado mecánico con iluminación RGB", 149.99m, 15, "Accesorios"),
+                Producto.Crear("Monitor 4K 27\"", "Monitor 4K de 27 pulgadas", 399.99m, 8, "Electrónicos")
+            };
+
+            // Asignar IDs secuenciales para el repositorio en memoria
+            for (int i = 0; i < productos.Count; i++)
+            {
+                productos[i].Id = i + 1;
+            }
+
+            _productos = productos;
+        }
 
         public Task<IEnumerable<Producto>> ObtenerTodosAsync()
         {
@@ -56,7 +69,7 @@ namespace CarritoComprasAPI.Adapters.Secondary
         public Task<IEnumerable<Producto>> BuscarPorCategoriaAsync(string categoria)
         {
             var productos = _productos
-                .Where(p => p.Categoria.Contains(categoria, StringComparison.OrdinalIgnoreCase))
+                .Where(p => p.CategoriaProducto.Value.Contains(categoria, StringComparison.OrdinalIgnoreCase))
                 .AsEnumerable();
             return Task.FromResult(productos);
         }

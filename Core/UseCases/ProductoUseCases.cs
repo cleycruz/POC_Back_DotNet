@@ -50,7 +50,7 @@ namespace CarritoComprasAPI.Core.UseCases
                 }
                 else
                 {
-                    _logger.LogInformation("Producto {ProductoNombre} encontrado", producto.Nombre);
+                    _logger.LogInformation("Producto {ProductoNombre} encontrado", producto.Nombre.Value);
                 }
 
                 return producto;
@@ -66,10 +66,9 @@ namespace CarritoComprasAPI.Core.UseCases
         {
             try
             {
-                _logger.LogInformation("Creando nuevo producto: {ProductoNombre}", producto.Nombre);
+                _logger.LogInformation("Creando nuevo producto: {ProductoNombre}", producto.Nombre.Value);
                 
-                // Validaciones de negocio
-                ValidarProducto(producto);
+                // Las validaciones ahora están en los Value Objects del producto
                 
                 var productoCreado = await _productoRepository.CrearAsync(producto);
                 _logger.LogInformation("Producto creado exitosamente con ID: {ProductoId}", productoCreado.Id);
@@ -78,7 +77,7 @@ namespace CarritoComprasAPI.Core.UseCases
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al crear producto: {ProductoNombre}", producto.Nombre);
+                _logger.LogError(ex, "Error al crear producto: {ProductoNombre}", producto.Nombre.Value);
                 throw;
             }
         }
@@ -96,8 +95,7 @@ namespace CarritoComprasAPI.Core.UseCases
                     return null;
                 }
 
-                // Validaciones de negocio
-                ValidarProducto(productoActualizado);
+                // Las validaciones ahora están en los Value Objects del producto
                 
                 // Mantener el ID y fecha de creación originales
                 productoActualizado.Id = id;
@@ -173,22 +171,5 @@ namespace CarritoComprasAPI.Core.UseCases
             }
         }
 
-        private static void ValidarProducto(Producto producto)
-        {
-            if (producto == null)
-                throw new ArgumentNullException(nameof(producto));
-
-            if (string.IsNullOrWhiteSpace(producto.Nombre))
-                throw new ArgumentException("El nombre del producto es requerido");
-
-            if (producto.Precio <= 0)
-                throw new ArgumentException("El precio debe ser mayor a 0");
-
-            if (producto.Stock < 0)
-                throw new ArgumentException("El stock no puede ser negativo");
-
-            if (string.IsNullOrWhiteSpace(producto.Categoria))
-                throw new ArgumentException("La categoría del producto es requerida");
-        }
     }
 }

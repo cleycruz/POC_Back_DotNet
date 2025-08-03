@@ -249,12 +249,12 @@ namespace CarritoComprasAPI.Adapters.Primary
         {
             return new CarritoDto
             {
-                UsuarioId = carrito.UsuarioId,
+                UsuarioId = carrito.UsuarioCarrito.Value,
                 Items = carrito.Items?.Select(item => new CarritoItemDto
                 {
                     ProductoId = item.ProductoId,
                     ProductoNombre = item.Producto?.Nombre ?? "Producto no disponible",
-                    Cantidad = item.Cantidad,
+                    Cantidad = item.CantidadItem.Value,
                     PrecioUnitario = item.PrecioUnitario,
                     Subtotal = item.Subtotal
                 }).ToList() ?? new List<CarritoItemDto>(),

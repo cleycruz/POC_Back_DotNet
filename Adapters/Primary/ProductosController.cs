@@ -7,12 +7,10 @@ using CarritoComprasAPI.DTOs;
 
 namespace CarritoComprasAPI.Adapters.Primary
 {
-    [ApiController]
     [Route("api/productos")]
-    public class ProductosController : ControllerBase
+    public class ProductosController : BaseController
     {
         private readonly IMediator _mediator;
-        private const string ErrorInternoServidor = "Error interno del servidor";
 
         public ProductosController(IMediator mediator)
         {
@@ -25,17 +23,12 @@ namespace CarritoComprasAPI.Adapters.Primary
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ProductoDto>>> ObtenerTodos()
         {
-            try
+            return await ExecuteAsync(async () =>
             {
                 var query = new ObtenerTodosProductosQuery();
                 var productos = await _mediator.Send(query);
-                var productosDto = productos.Select(MapearADto);
-                return Ok(productosDto);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, ErrorInternoServidor);
-            }
+                return productos.Select(MapearADto);
+            });
         }
 
         /// <summary>
@@ -170,11 +163,11 @@ namespace CarritoComprasAPI.Adapters.Primary
             return new ProductoDto
             {
                 Id = producto.Id,
-                Nombre = producto.Nombre,
+                Nombre = producto.Nombre.Value,
                 Descripcion = producto.Descripcion,
-                Precio = producto.Precio,
-                Stock = producto.Stock,
-                Categoria = producto.Categoria
+                Precio = producto.PrecioProducto.Value,
+                Stock = producto.StockProducto.Value,
+                Categoria = producto.CategoriaProducto.Value
             };
         }
     }

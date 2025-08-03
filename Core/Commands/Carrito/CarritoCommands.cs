@@ -72,13 +72,13 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
                 }
 
                 // Validar stock disponible
-                var cantidadEnCarrito = carrito.ObtenerItem(command.ProductoId)?.Cantidad ?? 0;
+                var cantidadEnCarrito = carrito.ObtenerItem(command.ProductoId)?.CantidadItem.Value ?? 0;
                 var cantidadTotal = cantidadEnCarrito + command.Cantidad;
 
                 if (!producto.TieneStock(cantidadTotal))
                 {
                     throw new InvalidOperationException(
-                        $"Stock insuficiente. Stock disponible: {producto.Stock}, cantidad en carrito: {cantidadEnCarrito}, cantidad solicitada: {command.Cantidad}");
+                        $"Stock insuficiente. Stock disponible: {producto.StockProducto.Value}, cantidad en carrito: {cantidadEnCarrito}, cantidad solicitada: {command.Cantidad}");
                 }
 
                 // Agregar item al carrito
@@ -163,7 +163,7 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
                     if (!producto.TieneStock(command.Cantidad))
                     {
                         throw new InvalidOperationException(
-                            $"Stock insuficiente. Stock disponible: {producto.Stock}, cantidad solicitada: {command.Cantidad}");
+                            $"Stock insuficiente. Stock disponible: {producto.StockProducto.Value}, cantidad solicitada: {command.Cantidad}");
                     }
 
                     // Actualizar cantidad

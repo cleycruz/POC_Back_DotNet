@@ -120,10 +120,10 @@ namespace CarritoComprasAPI.Core.Commands.Productos
                 }
 
                 // Preparar valores para validación (usar valores actuales si no se proporcionan nuevos)
-                var nombre = command.Nombre ?? productoExistente.Nombre;
-                var categoria = command.Categoria ?? productoExistente.Categoria;
-                var precio = command.Precio ?? productoExistente.Precio;
-                var stock = command.Stock ?? productoExistente.Stock;
+                var nombre = command.Nombre ?? productoExistente.Nombre.Value;
+                var categoria = command.Categoria ?? productoExistente.CategoriaProducto.Value;
+                var precio = command.Precio ?? productoExistente.PrecioProducto.Value;
+                var stock = command.Stock ?? productoExistente.StockProducto.Value;
 
                 // Validaciones de negocio
                 var businessValidation = await _businessValidator.ValidateUpdateAsync(
@@ -136,19 +136,24 @@ namespace CarritoComprasAPI.Core.Commands.Productos
 
                 // Aplicar cambios solo si se proporcionan
                 if (!string.IsNullOrEmpty(command.Nombre))
-                    productoExistente.Nombre = command.Nombre;
+                    productoExistente.ActualizarInformacion(command.Nombre, productoExistente.Descripcion, productoExistente.CategoriaProducto.Value);
                 
                 if (!string.IsNullOrEmpty(command.Descripcion))
-                    productoExistente.Descripcion = command.Descripcion;
+                    productoExistente.ActualizarInformacion(productoExistente.Nombre.Value, command.Descripcion, productoExistente.CategoriaProducto.Value);
                 
                 if (command.Precio.HasValue && command.Precio > 0)
                     productoExistente.ActualizarPrecio(command.Precio.Value);
                 
                 if (command.Stock.HasValue && command.Stock >= 0)
-                    productoExistente.Stock = command.Stock.Value;
+                {
+                    if (command.Stock.Value > productoExistente.StockProducto.Value)
+                        productoExistente.AumentarStock(command.Stock.Value - productoExistente.StockProducto.Value);
+                    else if (command.Stock.Value < productoExistente.StockProducto.Value)
+                        productoExistente.ReducirStock(productoExistente.StockProducto.Value - command.Stock.Value);
+                }
                 
                 if (!string.IsNullOrEmpty(command.Categoria))
-                    productoExistente.Categoria = command.Categoria;
+                    productoExistente.ActualizarInformacion(productoExistente.Nombre.Value, productoExistente.Descripcion, command.Categoria);
 
                 var productoActualizado = await _repository.ActualizarAsync(productoExistente);
                 
