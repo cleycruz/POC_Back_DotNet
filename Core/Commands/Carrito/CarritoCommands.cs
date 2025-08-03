@@ -1,6 +1,7 @@
 using CarritoComprasAPI.Core.Commands;
 using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Ports;
+using CarritoComprasAPI.Core.Validators;
 
 namespace CarritoComprasAPI.Core.Commands.Carrito
 {
@@ -16,15 +17,18 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
     {
         private readonly ICarritoRepository _carritoRepository;
         private readonly IProductoRepository _productoRepository;
+        private readonly ICarritoBusinessValidator _businessValidator;
         private readonly IAppLogger _logger;
 
         public AgregarItemCarritoCommandHandler(
             ICarritoRepository carritoRepository,
             IProductoRepository productoRepository,
+            ICarritoBusinessValidator businessValidator,
             IAppLogger logger)
         {
             _carritoRepository = carritoRepository ?? throw new ArgumentNullException(nameof(carritoRepository));
             _productoRepository = productoRepository ?? throw new ArgumentNullException(nameof(productoRepository));
+            _businessValidator = businessValidator ?? throw new ArgumentNullException(nameof(businessValidator));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -35,7 +39,14 @@ namespace CarritoComprasAPI.Core.Commands.Carrito
                 _logger.LogInformation("Agregando {Cantidad} unidades del producto {ProductoId} al carrito del usuario {UsuarioId}",
                     command.Cantidad, command.ProductoId, command.UsuarioId);
 
-                ValidarCommand(command);
+                // Validaciones de negocio
+                var businessValidation = await _businessValidator.ValidateAddItemAsync(
+                    command.UsuarioId, command.ProductoId, command.Cantidad);
+                
+                if (!businessValidation.IsValid)
+                {
+                    throw new BusinessValidationException(businessValidation.Errors);
+                }
 
                 // Obtener producto
                 var producto = await _productoRepository.ObtenerPorIdAsync(command.ProductoId);

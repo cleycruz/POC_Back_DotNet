@@ -4,6 +4,9 @@ using CarritoComprasAPI.Adapters.Secondary;
 using CarritoComprasAPI.Core.Mediator;
 using CarritoComprasAPI.Core.Domain.Events;
 using CarritoComprasAPI.Core.Caching;
+using CarritoComprasAPI.Core.Validators;
+using FluentValidation;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +50,13 @@ builder.Services.AddCqrsHandlers();
 // Registrar eventos de dominio
 builder.Services.AddDomainEvents();
 
+// Registrar FluentValidation
+builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+// Registrar validadores de negocio
+builder.Services.AddScoped<IProductoBusinessValidator, ProductoBusinessValidator>();
+builder.Services.AddScoped<ICarritoBusinessValidator, CarritoBusinessValidator>();
+
 // Registrar servicios de caché
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 builder.Services.AddSingleton<ICacheInvalidationService, CacheInvalidationService>();
@@ -70,6 +80,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Registrar middleware de validación
+app.UseMiddleware<ValidationExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

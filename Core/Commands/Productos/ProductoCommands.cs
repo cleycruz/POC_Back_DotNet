@@ -2,6 +2,7 @@ using CarritoComprasAPI.Core.Commands;
 using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Domain.Events;
 using CarritoComprasAPI.Core.Ports;
+using CarritoComprasAPI.Core.Validators;
 
 namespace CarritoComprasAPI.Core.Commands.Productos
 {
@@ -19,15 +20,18 @@ namespace CarritoComprasAPI.Core.Commands.Productos
     {
         private readonly IProductoRepository _repository;
         private readonly IDomainEventDispatcher _eventDispatcher;
+        private readonly IProductoBusinessValidator _businessValidator;
         private readonly IAppLogger _logger;
 
         public CrearProductoCommandHandler(
             IProductoRepository repository, 
             IDomainEventDispatcher eventDispatcher,
+            IProductoBusinessValidator businessValidator,
             IAppLogger logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _eventDispatcher = eventDispatcher ?? throw new ArgumentNullException(nameof(eventDispatcher));
+            _businessValidator = businessValidator ?? throw new ArgumentNullException(nameof(businessValidator));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -38,7 +42,13 @@ namespace CarritoComprasAPI.Core.Commands.Productos
                 _logger.LogInformation("Creando producto: {Nombre}", command.Nombre);
 
                 // Validaciones de negocio
-                ValidarCommand(command);
+                var businessValidation = await _businessValidator.ValidateCreateAsync(
+                    command.Nombre, command.Categoria, command.Precio, command.Stock);
+                
+                if (!businessValidation.IsValid)
+                {
+                    throw new BusinessValidationException(businessValidation.Errors);
+                }
 
                 // Crear entidad de dominio usando método factory
                 var producto = Producto.Crear(
@@ -64,21 +74,6 @@ namespace CarritoComprasAPI.Core.Commands.Productos
                 throw;
             }
         }
-
-        private static void ValidarCommand(CrearProductoCommand command)
-        {
-            if (string.IsNullOrWhiteSpace(command.Nombre))
-                throw new ArgumentException("El nombre del producto es requerido");
-
-            if (command.Precio <= 0)
-                throw new ArgumentException("El precio debe ser mayor a 0");
-
-            if (command.Stock < 0)
-                throw new ArgumentException("El stock no puede ser negativo");
-
-            if (string.IsNullOrWhiteSpace(command.Categoria))
-                throw new ArgumentException("La categoría del producto es requerida");
-        }
     }
 
     // Command para actualizar producto
@@ -95,11 +90,19 @@ namespace CarritoComprasAPI.Core.Commands.Productos
     public class ActualizarProductoCommandHandler : ICommandHandler<ActualizarProductoCommand, Producto?>
     {
         private readonly IProductoRepository _repository;
+        private readonly IDomainEventDispatcher _eventDispatcher;
+        private readonly IProductoBusinessValidator _businessValidator;
         private readonly IAppLogger _logger;
 
-        public ActualizarProductoCommandHandler(IProductoRepository repository, IAppLogger logger)
+        public ActualizarProductoCommandHandler(
+            IProductoRepository repository, 
+            IDomainEventDispatcher eventDispatcher,
+            IProductoBusinessValidator businessValidator,
+            IAppLogger logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _eventDispatcher = eventDispatcher ?? throw new ArgumentNullException(nameof(eventDispatcher));
+            _businessValidator = businessValidator ?? throw new ArgumentNullException(nameof(businessValidator));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -114,6 +117,21 @@ namespace CarritoComprasAPI.Core.Commands.Productos
                 {
                     _logger.LogWarning("Producto con ID {ProductoId} no encontrado", command.Id);
                     return null;
+                }
+
+                // Preparar valores para validación (usar valores actuales si no se proporcionan nuevos)
+                var nombre = command.Nombre ?? productoExistente.Nombre;
+                var categoria = command.Categoria ?? productoExistente.Categoria;
+                var precio = command.Precio ?? productoExistente.Precio;
+                var stock = command.Stock ?? productoExistente.Stock;
+
+                // Validaciones de negocio
+                var businessValidation = await _businessValidator.ValidateUpdateAsync(
+                    command.Id, nombre, categoria, precio, stock);
+                
+                if (!businessValidation.IsValid)
+                {
+                    throw new BusinessValidationException(businessValidation.Errors);
                 }
 
                 // Aplicar cambios solo si se proporcionan
@@ -133,6 +151,9 @@ namespace CarritoComprasAPI.Core.Commands.Productos
                     productoExistente.Categoria = command.Categoria;
 
                 var productoActualizado = await _repository.ActualizarAsync(productoExistente);
+                
+                // Despachar eventos de dominio
+                await _eventDispatcher.DispatchAndClearEvents(productoActualizado, cancellationToken);
                 
                 _logger.LogInformation("Producto {ProductoId} actualizado exitosamente", command.Id);
                 
@@ -154,15 +175,18 @@ namespace CarritoComprasAPI.Core.Commands.Productos
     {
         private readonly IProductoRepository _repository;
         private readonly IDomainEventDispatcher _eventDispatcher;
+        private readonly IProductoBusinessValidator _businessValidator;
         private readonly IAppLogger _logger;
 
         public EliminarProductoCommandHandler(
             IProductoRepository repository, 
             IDomainEventDispatcher eventDispatcher,
+            IProductoBusinessValidator businessValidator,
             IAppLogger logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _eventDispatcher = eventDispatcher ?? throw new ArgumentNullException(nameof(eventDispatcher));
+            _businessValidator = businessValidator ?? throw new ArgumentNullException(nameof(businessValidator));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -171,6 +195,13 @@ namespace CarritoComprasAPI.Core.Commands.Productos
             try
             {
                 _logger.LogInformation("Eliminando producto con ID: {ProductoId}", command.Id);
+
+                // Validaciones de negocio
+                var businessValidation = await _businessValidator.ValidateDeleteAsync(command.Id);
+                if (!businessValidation.IsValid)
+                {
+                    throw new BusinessValidationException(businessValidation.Errors);
+                }
 
                 // Obtener el producto antes de eliminarlo para capturar sus datos
                 var producto = await _repository.ObtenerPorIdAsync(command.Id);
