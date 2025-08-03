@@ -8,6 +8,8 @@ namespace CarritoComprasAPI.DTOs
         public string UsuarioId { get; set; } = string.Empty;
         public List<CarritoItemDto> Items { get; set; } = new List<CarritoItemDto>();
         public decimal Total { get; set; }
+        public int CantidadItems { get; set; }
+        public int CantidadProductos { get; set; }
         public DateTime FechaCreacion { get; set; }
         public DateTime FechaActualizacion { get; set; }
     }
@@ -16,7 +18,7 @@ namespace CarritoComprasAPI.DTOs
     {
         public int Id { get; set; }
         public int ProductoId { get; set; }
-        public string NombreProducto { get; set; } = string.Empty;
+        public string ProductoNombre { get; set; } = string.Empty;
         public int Cantidad { get; set; }
         public decimal PrecioUnitario { get; set; }
         public decimal Subtotal { get; set; }
@@ -33,7 +35,7 @@ namespace CarritoComprasAPI.DTOs
         public int Cantidad { get; set; }
     }
 
-    public class ActualizarItemCarritoDto
+    public class ActualizarCantidadDto
     {
         [Required(ErrorMessage = "La cantidad es requerida")]
         [Range(0, int.MaxValue, ErrorMessage = "La cantidad debe ser mayor o igual a 0")]

@@ -1,4 +1,6 @@
-using CarritoComprasAPI.Services;
+using CarritoComprasAPI.Core.Ports;
+using CarritoComprasAPI.Core.UseCases;
+using CarritoComprasAPI.Adapters.Secondary;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +12,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { 
         Title = "Carrito de Compras API", 
         Version = "v1",
-        Description = "API para gestión de carrito de compras con operaciones CRUD"
+        Description = "API para gestión de carrito de compras con Arquitectura Hexagonal"
     });
     
     // Incluir comentarios XML
@@ -22,9 +24,15 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// Registrar servicios de dependencias
-builder.Services.AddScoped<IProductoService, ProductoService>();
-builder.Services.AddScoped<ICarritoService, CarritoService>();
+// Registrar puertos (interfaces) con sus adaptadores
+// Adaptadores secundarios (driven adapters)
+builder.Services.AddSingleton<IProductoRepository, InMemoryProductoRepository>();
+builder.Services.AddSingleton<ICarritoRepository, InMemoryCarritoRepository>();
+builder.Services.AddSingleton<IAppLogger, ConsoleLogger>();
+
+// Casos de uso (core business logic)
+builder.Services.AddScoped<IProductoUseCases, ProductoUseCases>();
+builder.Services.AddScoped<ICarritoUseCases, CarritoUseCases>();
 
 // Configurar CORS
 builder.Services.AddCors(options =>
@@ -55,4 +63,4 @@ app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

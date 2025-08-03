@@ -1,23 +1,65 @@
-# Carrito de Compras API
+# Carrito de Compras API - Arquitectura Hexagonal
 
-Una API RESTful desarrollada en .NET 9 para gestionar un sistema de carrito de compras con operaciones CRUD básicas.
+Una API RESTful desarrollada en .NET 9 implementando **Arquitectura Hexagonal (Ports & Adapters)** para gestionar un sistema de carrito de compras con operaciones CRUD básicas.
 
-## Características
+## 🏗️ Arquitectura
 
-- ✅ Gestión de productos (CRUD completo)
-- ✅ Gestión de carrito de compras por usuario
-- ✅ Operaciones de carrito: agregar, actualizar, eliminar items
-- ✅ Cálculo automático de totales
-- ✅ Documentación automática con Swagger
-- ✅ Validación de stock
-- ✅ Búsqueda por categoría
+Esta aplicación implementa **Arquitectura Hexagonal** con una clara separación entre:
 
-## Tecnologías
+### Core (Núcleo de negocio)
+- **Domain**: Entidades de dominio con lógica de negocio
+- **Ports**: Interfaces que definen contratos (puertos de entrada y salida)
+- **UseCases**: Casos de uso que implementan la lógica de aplicación
 
-- .NET 9
-- ASP.NET Core Web API
-- Swagger/OpenAPI
-- Entity Framework (en memoria para este ejemplo)
+### Adapters (Adaptadores)
+- **Primary (Driving)**: Controladores que exponen la API REST
+- **Secondary (Driven)**: Implementaciones de persistencia y servicios externos
+
+### Estructura del proyecto
+```
+├── Core/                          # Núcleo de la aplicación (sin dependencias externas)
+│   ├── Domain/                    # Entidades de dominio
+│   │   ├── Producto.cs
+│   │   ├── Carrito.cs
+│   │   └── CarritoItem.cs
+│   ├── Ports/                     # Interfaces (contratos)
+│   │   └── IPorts.cs
+│   └── UseCases/                  # Lógica de aplicación
+│       ├── ProductoUseCases.cs
+│       └── CarritoUseCases.cs
+├── Adapters/                      # Implementaciones externas
+│   ├── Primary/                   # Adaptadores de entrada (API)
+│   │   ├── ProductosController.cs
+│   │   └── CarritoController.cs
+│   └── Secondary/                 # Adaptadores de salida (persistencia)
+│       ├── InMemoryProductoRepository.cs
+│       ├── InMemoryCarritoRepository.cs
+│       └── ConsoleLogger.cs
+├── DTOs/                          # Objetos de transferencia de datos
+└── Program.cs                     # Configuración de dependencias
+```
+
+## ✨ Características
+
+- ✅ **Gestión de productos** (CRUD completo)
+- ✅ **Gestión de carrito** de compras por usuario
+- ✅ **Operaciones de carrito**: agregar, actualizar, eliminar items
+- ✅ **Cálculo automático** de totales
+- ✅ **Validación de stock** con lógica de dominio
+- ✅ **Búsqueda por categoría**
+- ✅ **Logging estructurado**
+- ✅ **Validaciones de negocio** en el dominio
+- ✅ **Documentación automática** con Swagger
+- ✅ **Arquitectura testeable** y mantenible
+
+## 🚀 Tecnologías
+
+- **.NET 9** - Framework principal
+- **ASP.NET Core Web API** - API REST
+- **Swagger/OpenAPI** - Documentación automática
+- **Arquitectura Hexagonal** - Patrón arquitectónico
+- **Dependency Injection** - Inversión de control
+- **Data Annotations** - Validaciones
 
 ## Endpoints
 
