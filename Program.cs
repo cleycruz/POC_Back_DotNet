@@ -2,6 +2,7 @@ using CarritoComprasAPI.Core.Ports;
 using CarritoComprasAPI.Core.UseCases;
 using CarritoComprasAPI.Adapters.Secondary;
 using CarritoComprasAPI.Core.Mediator;
+using CarritoComprasAPI.Core.Domain.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +39,9 @@ builder.Services.AddScoped<ICarritoUseCases, CarritoUseCases>();
 // Registrar CQRS
 builder.Services.AddSimpleMediator();
 builder.Services.AddCqrsHandlers();
+
+// Registrar eventos de dominio
+builder.Services.AddDomainEvents();
 
 // Configurar CORS
 builder.Services.AddCors(options =>

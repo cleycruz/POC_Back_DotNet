@@ -1,8 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using CarritoComprasAPI.Core.Domain.Events;
+using CarritoComprasAPI.Core.Domain.Events.Productos;
 
 namespace CarritoComprasAPI.Core.Domain
 {
-    public class Producto
+    public class Producto : DomainEntity
     {
         public int Id { get; set; }
         
@@ -36,7 +38,18 @@ namespace CarritoComprasAPI.Core.Domain
             if (!TieneStock(cantidad))
                 throw new InvalidOperationException($"Stock insuficiente. Stock actual: {Stock}, cantidad solicitada: {cantidad}");
             
+            var stockAnterior = Stock;
             Stock -= cantidad;
+
+            // Publicar evento de cambio de stock
+            RaiseDomainEvent(new StockProductoCambiado(
+                Id, Nombre, stockAnterior, Stock, "Reducción por venta"));
+
+            // Publicar evento si se queda sin stock
+            if (Stock == 0)
+            {
+                RaiseDomainEvent(new ProductoSinStock(Id, Nombre, Categoria));
+            }
         }
 
         public void AumentarStock(int cantidad)
@@ -44,7 +57,12 @@ namespace CarritoComprasAPI.Core.Domain
             if (cantidad <= 0)
                 throw new ArgumentException("La cantidad debe ser mayor a 0", nameof(cantidad));
             
+            var stockAnterior = Stock;
             Stock += cantidad;
+
+            // Publicar evento de cambio de stock
+            RaiseDomainEvent(new StockProductoCambiado(
+                Id, Nombre, stockAnterior, Stock, "Aumento de inventario"));
         }
 
         public void ActualizarPrecio(decimal nuevoPrecio)
@@ -52,7 +70,47 @@ namespace CarritoComprasAPI.Core.Domain
             if (nuevoPrecio <= 0)
                 throw new ArgumentException("El precio debe ser mayor a 0", nameof(nuevoPrecio));
             
+            var precioAnterior = Precio;
             Precio = nuevoPrecio;
+
+            // Calcular porcentaje de cambio
+            var porcentajeCambio = precioAnterior > 0 
+                ? ((nuevoPrecio - precioAnterior) / precioAnterior) * 100 
+                : 0;
+
+            // Publicar evento de cambio de precio
+            RaiseDomainEvent(new PrecioProductoCambiado(
+                Id, Nombre, precioAnterior, nuevoPrecio, porcentajeCambio));
+        }
+
+        /// <summary>
+        /// Método factory para crear un nuevo producto
+        /// </summary>
+        public static Producto Crear(string nombre, string descripcion, decimal precio, int stock, string categoria)
+        {
+            var producto = new Producto
+            {
+                Nombre = nombre,
+                Descripcion = descripcion,
+                Precio = precio,
+                Stock = stock,
+                Categoria = categoria,
+                FechaCreacion = DateTime.UtcNow
+            };
+
+            // Publicar evento de creación
+            producto.RaiseDomainEvent(new ProductoCreado(
+                producto.Id, nombre, descripcion, precio, stock, categoria, producto.FechaCreacion));
+
+            return producto;
+        }
+
+        /// <summary>
+        /// Método para marcar el producto como eliminado
+        /// </summary>
+        public void MarcarComoEliminado()
+        {
+            RaiseDomainEvent(new ProductoEliminado(Id, Nombre, Categoria));
         }
     }
 }

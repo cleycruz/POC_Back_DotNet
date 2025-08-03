@@ -1,5 +1,6 @@
 using CarritoComprasAPI.Core.Commands;
 using CarritoComprasAPI.Core.Domain;
+using CarritoComprasAPI.Core.Domain.Events;
 using CarritoComprasAPI.Core.Ports;
 
 namespace CarritoComprasAPI.Core.Commands.Productos
@@ -17,11 +18,16 @@ namespace CarritoComprasAPI.Core.Commands.Productos
     public class CrearProductoCommandHandler : ICommandHandler<CrearProductoCommand, Producto>
     {
         private readonly IProductoRepository _repository;
+        private readonly IDomainEventDispatcher _eventDispatcher;
         private readonly IAppLogger _logger;
 
-        public CrearProductoCommandHandler(IProductoRepository repository, IAppLogger logger)
+        public CrearProductoCommandHandler(
+            IProductoRepository repository, 
+            IDomainEventDispatcher eventDispatcher,
+            IAppLogger logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _eventDispatcher = eventDispatcher ?? throw new ArgumentNullException(nameof(eventDispatcher));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -34,18 +40,19 @@ namespace CarritoComprasAPI.Core.Commands.Productos
                 // Validaciones de negocio
                 ValidarCommand(command);
 
-                // Crear entidad de dominio
-                var producto = new Producto
-                {
-                    Nombre = command.Nombre,
-                    Descripcion = command.Descripcion,
-                    Precio = command.Precio,
-                    Stock = command.Stock,
-                    Categoria = command.Categoria
-                };
+                // Crear entidad de dominio usando método factory
+                var producto = Producto.Crear(
+                    command.Nombre,
+                    command.Descripcion,
+                    command.Precio,
+                    command.Stock,
+                    command.Categoria);
 
                 // Persistir
                 var productoCreado = await _repository.CrearAsync(producto);
+                
+                // Despachar eventos de dominio
+                await _eventDispatcher.DispatchAndClearEvents(productoCreado, cancellationToken);
                 
                 _logger.LogInformation("Producto creado exitosamente con ID: {ProductoId}", productoCreado.Id);
                 
@@ -146,11 +153,16 @@ namespace CarritoComprasAPI.Core.Commands.Productos
     public class EliminarProductoCommandHandler : ICommandHandler<EliminarProductoCommand, bool>
     {
         private readonly IProductoRepository _repository;
+        private readonly IDomainEventDispatcher _eventDispatcher;
         private readonly IAppLogger _logger;
 
-        public EliminarProductoCommandHandler(IProductoRepository repository, IAppLogger logger)
+        public EliminarProductoCommandHandler(
+            IProductoRepository repository, 
+            IDomainEventDispatcher eventDispatcher,
+            IAppLogger logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _eventDispatcher = eventDispatcher ?? throw new ArgumentNullException(nameof(eventDispatcher));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -160,17 +172,23 @@ namespace CarritoComprasAPI.Core.Commands.Productos
             {
                 _logger.LogInformation("Eliminando producto con ID: {ProductoId}", command.Id);
 
-                var existe = await _repository.ExisteAsync(command.Id);
-                if (!existe)
+                // Obtener el producto antes de eliminarlo para capturar sus datos
+                var producto = await _repository.ObtenerPorIdAsync(command.Id);
+                if (producto == null)
                 {
                     _logger.LogWarning("Producto con ID {ProductoId} no encontrado", command.Id);
                     return false;
                 }
 
+                // Marcar como eliminado para generar evento
+                producto.MarcarComoEliminado();
+
                 var resultado = await _repository.EliminarAsync(command.Id);
                 
                 if (resultado)
                 {
+                    // Despachar eventos de dominio
+                    await _eventDispatcher.DispatchAndClearEvents(producto, cancellationToken);
                     _logger.LogInformation("Producto {ProductoId} eliminado exitosamente", command.Id);
                 }
 
