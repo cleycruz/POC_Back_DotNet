@@ -1,6 +1,7 @@
 using CarritoComprasAPI.Core.Ports;
 using CarritoComprasAPI.Core.UseCases;
 using CarritoComprasAPI.Adapters.Secondary;
+using CarritoComprasAPI.Core.Mediator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,9 +31,13 @@ builder.Services.AddSingleton<IProductoRepository, InMemoryProductoRepository>()
 builder.Services.AddSingleton<ICarritoRepository, InMemoryCarritoRepository>();
 builder.Services.AddSingleton<IAppLogger, ConsoleLogger>();
 
-// Casos de uso (core business logic)
+// Casos de uso (core business logic) - mantenemos para compatibilidad
 builder.Services.AddScoped<IProductoUseCases, ProductoUseCases>();
 builder.Services.AddScoped<ICarritoUseCases, CarritoUseCases>();
+
+// Registrar CQRS
+builder.Services.AddSimpleMediator();
+builder.Services.AddCqrsHandlers();
 
 // Configurar CORS
 builder.Services.AddCors(options =>

@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using CarritoComprasAPI.Core.Ports;
+using CarritoComprasAPI.Core.Mediator;
+using CarritoComprasAPI.Core.Commands.Carrito;
+using CarritoComprasAPI.Core.Queries.Carrito;
+using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.DTOs;
 
 namespace CarritoComprasAPI.Adapters.Primary
@@ -8,11 +11,12 @@ namespace CarritoComprasAPI.Adapters.Primary
     [Route("api/carrito")]
     public class CarritoController : ControllerBase
     {
-        private readonly ICarritoUseCases _carritoUseCases;
+        private readonly IMediator _mediator;
+        private const string ErrorInternoServidor = "Error interno del servidor";
 
-        public CarritoController(ICarritoUseCases carritoUseCases)
+        public CarritoController(IMediator mediator)
         {
-            _carritoUseCases = carritoUseCases ?? throw new ArgumentNullException(nameof(carritoUseCases));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
 
         /// <summary>
@@ -23,17 +27,88 @@ namespace CarritoComprasAPI.Adapters.Primary
         {
             try
             {
-                var carrito = await _carritoUseCases.ObtenerCarritoAsync(usuarioId);
+                var query = new ObtenerCarritoPorUsuarioQuery(usuarioId);
+                var carrito = await _mediator.Send(query);
+                
+                if (carrito == null)
+                    return Ok(new CarritoDto { UsuarioId = usuarioId });
+                
                 var carritoDto = MapearADto(carrito);
                 return Ok(carritoDto);
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ex.Message);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el total del carrito de un usuario
+        /// </summary>
+        [HttpGet("{usuarioId}/total")]
+        public async Task<ActionResult<decimal>> ObtenerTotal(string usuarioId)
+        {
+            try
+            {
+                var query = new ObtenerTotalCarritoQuery(usuarioId);
+                var total = await _mediator.Send(query);
+                return Ok(total);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, ErrorInternoServidor);
+            }
+        }
+
+        /// <summary>
+        /// Obtiene un resumen del carrito de un usuario
+        /// </summary>
+        [HttpGet("{usuarioId}/resumen")]
+        public async Task<ActionResult<object>> ObtenerResumen(string usuarioId)
+        {
+            try
+            {
+                var query = new ObtenerResumenCarritoQuery(usuarioId);
+                var resumen = await _mediator.Send(query);
+                return Ok(resumen);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, ErrorInternoServidor);
+            }
+        }
+
+        /// <summary>
+        /// Obtiene los items del carrito de un usuario
+        /// </summary>
+        [HttpGet("{usuarioId}/items")]
+        public async Task<ActionResult<IEnumerable<CarritoItem>>> ObtenerItems(string usuarioId)
+        {
+            try
+            {
+                var query = new ObtenerItemsCarritoQuery(usuarioId);
+                var items = await _mediator.Send(query);
+                return Ok(items);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
@@ -41,29 +116,35 @@ namespace CarritoComprasAPI.Adapters.Primary
         /// Agrega un item al carrito
         /// </summary>
         [HttpPost("{usuarioId}/items")]
-        public async Task<ActionResult<CarritoDto>> AgregarItem(string usuarioId, [FromBody] AgregarItemCarritoDto itemDto)
+        public async Task<ActionResult<CarritoDto>> AgregarItem(
+            string usuarioId, 
+            [FromBody] AgregarItemCarritoDto dto)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var carrito = await _carritoUseCases.AgregarItemAsync(usuarioId, itemDto.ProductoId, itemDto.Cantidad);
-                var carritoDto = MapearADto(carrito);
+                var command = new AgregarItemCarritoCommand(
+                    usuarioId,
+                    dto.ProductoId,
+                    dto.Cantidad);
                 
+                var carrito = await _mediator.Send(command);
+                var carritoDto = MapearADto(carrito);
                 return Ok(carritoDto);
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ex.Message);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
@@ -71,29 +152,40 @@ namespace CarritoComprasAPI.Adapters.Primary
         /// Actualiza la cantidad de un item en el carrito
         /// </summary>
         [HttpPut("{usuarioId}/items/{productoId}")]
-        public async Task<ActionResult<CarritoDto>> ActualizarCantidad(string usuarioId, int productoId, [FromBody] ActualizarCantidadDto cantidadDto)
+        public async Task<ActionResult<CarritoDto>> ActualizarCantidad(
+            string usuarioId, 
+            int productoId, 
+            [FromBody] ActualizarCantidadDto dto)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var carrito = await _carritoUseCases.ActualizarCantidadAsync(usuarioId, productoId, cantidadDto.Cantidad);
-                var carritoDto = MapearADto(carrito);
+                var command = new ActualizarCantidadItemCommand(
+                    usuarioId,
+                    productoId,
+                    dto.Cantidad);
                 
+                var carrito = await _mediator.Send(command);
+                
+                if (carrito == null)
+                    return NotFound($"Item con producto ID {productoId} no encontrado en el carrito");
+                
+                var carritoDto = MapearADto(carrito);
                 return Ok(carritoDto);
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ex.Message);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
@@ -101,94 +193,72 @@ namespace CarritoComprasAPI.Adapters.Primary
         /// Elimina un item del carrito
         /// </summary>
         [HttpDelete("{usuarioId}/items/{productoId}")]
-        public async Task<ActionResult> EliminarItem(string usuarioId, int productoId)
+        public async Task<ActionResult<CarritoDto>> EliminarItem(string usuarioId, int productoId)
         {
             try
             {
-                var eliminado = await _carritoUseCases.EliminarItemAsync(usuarioId, productoId);
+                var command = new EliminarItemCarritoCommand(usuarioId, productoId);
+                var eliminado = await _mediator.Send(command);
                 
                 if (!eliminado)
-                    return NotFound(new { message = "Item no encontrado en el carrito" });
-
-                return NoContent();
+                    return NotFound($"Item con producto ID {productoId} no encontrado en el carrito");
+                
+                // Obtener el carrito actualizado
+                var query = new ObtenerCarritoPorUsuarioQuery(usuarioId);
+                var carrito = await _mediator.Send(query);
+                
+                if (carrito == null)
+                    return Ok(new CarritoDto { UsuarioId = usuarioId });
+                
+                var carritoDto = MapearADto(carrito);
+                return Ok(carritoDto);
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ex.Message);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
         /// <summary>
-        /// Vacía el carrito completo
+        /// Vacía el carrito de un usuario
         /// </summary>
         [HttpDelete("{usuarioId}")]
         public async Task<ActionResult> VaciarCarrito(string usuarioId)
         {
             try
             {
-                var vaciado = await _carritoUseCases.VaciarCarritoAsync(usuarioId);
-                
-                if (!vaciado)
-                    return NotFound(new { message = "Carrito no encontrado para el usuario" });
-
+                var command = new VaciarCarritoCommand(usuarioId);
+                await _mediator.Send(command);
                 return NoContent();
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(ex.Message);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
-        /// <summary>
-        /// Obtiene el total del carrito
-        /// </summary>
-        [HttpGet("{usuarioId}/total")]
-        public async Task<ActionResult<decimal>> ObtenerTotal(string usuarioId)
-        {
-            try
-            {
-                var total = await _carritoUseCases.ObtenerTotalAsync(usuarioId);
-                return Ok(new { total });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
-            }
-        }
-
-        // Métodos de mapeo
-        private static CarritoDto MapearADto(Core.Domain.Carrito carrito)
+        private static CarritoDto MapearADto(Carrito carrito)
         {
             return new CarritoDto
             {
-                Id = carrito.Id,
                 UsuarioId = carrito.UsuarioId,
-                Items = carrito.Items.Select(item => new CarritoItemDto
+                Items = carrito.Items?.Select(item => new CarritoItemDto
                 {
-                    Id = item.Id,
                     ProductoId = item.ProductoId,
-                    ProductoNombre = item.Producto?.Nombre ?? "Producto no encontrado",
+                    ProductoNombre = item.Producto?.Nombre ?? "Producto no disponible",
                     Cantidad = item.Cantidad,
                     PrecioUnitario = item.PrecioUnitario,
                     Subtotal = item.Subtotal
-                }).ToList(),
-                Total = carrito.Total,
-                CantidadItems = carrito.CantidadItems,
-                CantidadProductos = carrito.CantidadProductos,
-                FechaCreacion = carrito.FechaCreacion,
-                FechaActualizacion = carrito.FechaActualizacion
+                }).ToList() ?? new List<CarritoItemDto>(),
+                Total = carrito.Total
             };
         }
     }

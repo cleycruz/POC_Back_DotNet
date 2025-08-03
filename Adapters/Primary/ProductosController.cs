@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using CarritoComprasAPI.Core.Ports;
+using CarritoComprasAPI.Core.Mediator;
+using CarritoComprasAPI.Core.Commands.Productos;
+using CarritoComprasAPI.Core.Queries.Productos;
 using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.DTOs;
 
@@ -9,11 +11,12 @@ namespace CarritoComprasAPI.Adapters.Primary
     [Route("api/productos")]
     public class ProductosController : ControllerBase
     {
-        private readonly IProductoUseCases _productoUseCases;
+        private readonly IMediator _mediator;
+        private const string ErrorInternoServidor = "Error interno del servidor";
 
-        public ProductosController(IProductoUseCases productoUseCases)
+        public ProductosController(IMediator mediator)
         {
-            _productoUseCases = productoUseCases ?? throw new ArgumentNullException(nameof(productoUseCases));
+            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
         }
 
         /// <summary>
@@ -24,34 +27,36 @@ namespace CarritoComprasAPI.Adapters.Primary
         {
             try
             {
-                var productos = await _productoUseCases.ObtenerTodosAsync();
+                var query = new ObtenerTodosProductosQuery();
+                var productos = await _mediator.Send(query);
                 var productosDto = productos.Select(MapearADto);
                 return Ok(productosDto);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
         /// <summary>
-        /// Obtiene un producto por ID
+        /// Obtiene un producto por su ID
         /// </summary>
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductoDto>> ObtenerPorId(int id)
         {
             try
             {
-                var producto = await _productoUseCases.ObtenerPorIdAsync(id);
+                var query = new ObtenerProductoPorIdQuery(id);
+                var producto = await _mediator.Send(query);
                 
                 if (producto == null)
-                    return NotFound(new { message = $"Producto con ID {id} no encontrado" });
-
+                    return NotFound($"Producto con ID {id} no encontrado");
+                
                 return Ok(MapearADto(producto));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
@@ -59,26 +64,31 @@ namespace CarritoComprasAPI.Adapters.Primary
         /// Crea un nuevo producto
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<ProductoDto>> Crear([FromBody] CrearProductoDto productoDto)
+        public async Task<ActionResult<ProductoDto>> Crear([FromBody] CrearProductoDto dto)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var producto = MapearAEntidad(productoDto);
-                var productoCreado = await _productoUseCases.CrearAsync(producto);
-                var resultado = MapearADto(productoCreado);
-
-                return CreatedAtAction(nameof(ObtenerPorId), new { id = resultado.Id }, resultado);
+                var command = new CrearProductoCommand(
+                    dto.Nombre,
+                    dto.Descripcion,
+                    dto.Precio,
+                    dto.Stock,
+                    dto.Categoria);
+                
+                var productoCreado = await _mediator.Send(command);
+                var productoDto = MapearADto(productoCreado);
+                
+                return CreatedAtAction(
+                    nameof(ObtenerPorId), 
+                    new { id = productoCreado.Id }, 
+                    productoDto);
             }
-            catch (ArgumentException ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
@@ -86,28 +96,31 @@ namespace CarritoComprasAPI.Adapters.Primary
         /// Actualiza un producto existente
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<ActionResult<ProductoDto>> Actualizar(int id, [FromBody] ActualizarProductoDto productoDto)
+        public async Task<ActionResult<ProductoDto>> Actualizar(int id, [FromBody] ActualizarProductoDto dto)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var producto = MapearAEntidadActualizar(productoDto);
-                var productoActualizado = await _productoUseCases.ActualizarAsync(id, producto);
-
+                var command = new ActualizarProductoCommand(
+                    id,
+                    dto.Nombre,
+                    dto.Descripcion,
+                    dto.Precio,
+                    dto.Stock,
+                    dto.Categoria);
+                
+                var productoActualizado = await _mediator.Send(command);
+                
                 if (productoActualizado == null)
-                    return NotFound(new { message = $"Producto con ID {id} no encontrado" });
-
+                    return NotFound($"Producto con ID {id} no encontrado");
+                
                 return Ok(MapearADto(productoActualizado));
             }
-            catch (ArgumentException ex)
+            catch (Exception)
             {
-                return BadRequest(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
@@ -119,16 +132,17 @@ namespace CarritoComprasAPI.Adapters.Primary
         {
             try
             {
-                var eliminado = await _productoUseCases.EliminarAsync(id);
-
+                var command = new EliminarProductoCommand(id);
+                var eliminado = await _mediator.Send(command);
+                
                 if (!eliminado)
-                    return NotFound(new { message = $"Producto con ID {id} no encontrado" });
-
+                    return NotFound($"Producto con ID {id} no encontrado");
+                
                 return NoContent();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
@@ -140,17 +154,17 @@ namespace CarritoComprasAPI.Adapters.Primary
         {
             try
             {
-                var productos = await _productoUseCases.BuscarPorCategoriaAsync(categoria);
+                var query = new BuscarProductosPorCategoriaQuery(categoria);
+                var productos = await _mediator.Send(query);
                 var productosDto = productos.Select(MapearADto);
                 return Ok(productosDto);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { message = "Error interno del servidor", detail = ex.Message });
+                return StatusCode(500, ErrorInternoServidor);
             }
         }
 
-        // Métodos de mapeo
         private static ProductoDto MapearADto(Producto producto)
         {
             return new ProductoDto
@@ -161,30 +175,6 @@ namespace CarritoComprasAPI.Adapters.Primary
                 Precio = producto.Precio,
                 Stock = producto.Stock,
                 Categoria = producto.Categoria
-            };
-        }
-
-        private static Producto MapearAEntidad(CrearProductoDto dto)
-        {
-            return new Producto
-            {
-                Nombre = dto.Nombre,
-                Descripcion = dto.Descripcion,
-                Precio = dto.Precio,
-                Stock = dto.Stock,
-                Categoria = dto.Categoria
-            };
-        }
-
-        private static Producto MapearAEntidadActualizar(ActualizarProductoDto dto)
-        {
-            return new Producto
-            {
-                Nombre = dto.Nombre ?? string.Empty,
-                Descripcion = dto.Descripcion ?? string.Empty,
-                Precio = dto.Precio ?? 0,
-                Stock = dto.Stock ?? 0,
-                Categoria = dto.Categoria ?? string.Empty
             };
         }
     }
