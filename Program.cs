@@ -3,6 +3,7 @@ using CarritoComprasAPI.Core.UseCases;
 using CarritoComprasAPI.Adapters.Secondary;
 using CarritoComprasAPI.Core.Mediator;
 using CarritoComprasAPI.Core.Domain.Events;
+using CarritoComprasAPI.Core.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,9 @@ builder.Services.AddSingleton<IProductoRepository, InMemoryProductoRepository>()
 builder.Services.AddSingleton<ICarritoRepository, InMemoryCarritoRepository>();
 builder.Services.AddSingleton<IAppLogger, ConsoleLogger>();
 
+// Registrar servicios de caché
+builder.Services.AddMemoryCache(); // Esto registra IMemoryCache
+
 // Casos de uso (core business logic) - mantenemos para compatibilidad
 builder.Services.AddScoped<IProductoUseCases, ProductoUseCases>();
 builder.Services.AddScoped<ICarritoUseCases, CarritoUseCases>();
@@ -42,6 +46,17 @@ builder.Services.AddCqrsHandlers();
 
 // Registrar eventos de dominio
 builder.Services.AddDomainEvents();
+
+// Registrar servicios de caché
+builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
+builder.Services.AddSingleton<ICacheInvalidationService, CacheInvalidationService>();
+builder.Services.AddSingleton(new CacheConfiguration
+{
+    EnableCaching = true,
+    DefaultExpiration = TimeSpan.FromMinutes(15),
+    ProductosExpiration = TimeSpan.FromMinutes(30),
+    CarritosExpiration = TimeSpan.FromMinutes(5)
+});
 
 // Configurar CORS
 builder.Services.AddCors(options =>
