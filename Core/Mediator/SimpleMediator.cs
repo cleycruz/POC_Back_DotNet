@@ -4,23 +4,56 @@ using CarritoComprasAPI.Core.Domain.Events;
 
 namespace CarritoComprasAPI.Core.Mediator
 {
-    // Mediator/Dispatcher para CQRS
+    /// <summary>
+    /// Interfaz para el patrón Mediator en CQRS
+    /// </summary>
     public interface IMediator
     {
+        /// <summary>
+        /// Envía un comando para su procesamiento
+        /// </summary>
+        /// <typeparam name="TResponse">Tipo de respuesta del comando</typeparam>
+        /// <param name="command">Comando a procesar</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Resultado del procesamiento del comando</returns>
         Task<TResponse> Send<TResponse>(ICommand<TResponse> command, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Envía una consulta para su procesamiento
+        /// </summary>
+        /// <typeparam name="TResponse">Tipo de respuesta de la consulta</typeparam>
+        /// <param name="query">Consulta a procesar</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Resultado del procesamiento de la consulta</returns>
         Task<TResponse> Send<TResponse>(IQuery<TResponse> query, CancellationToken cancellationToken = default);
     }
 
-    // Implementación simple del mediator
+    /// <summary>
+    /// Implementación simple del patrón Mediator para CQRS
+    /// </summary>
     public class SimpleMediator : IMediator
     {
         private readonly IServiceProvider _serviceProvider;
 
+        /// <summary>
+        /// Inicializa una nueva instancia de SimpleMediator
+        /// </summary>
+        /// <param name="serviceProvider">Proveedor de servicios para resolver handlers</param>
+        /// <exception cref="ArgumentNullException">Lanzado cuando serviceProvider es null</exception>
         public SimpleMediator(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
+        /// <summary>
+        /// Procesa un comando usando el handler apropiado
+        /// </summary>
+        /// <typeparam name="TResponse">Tipo de respuesta del comando</typeparam>
+        /// <param name="command">Comando a procesar</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Resultado del procesamiento del comando</returns>
+        /// <exception cref="ArgumentNullException">Lanzado cuando command es null</exception>
+        /// <exception cref="InvalidOperationException">Lanzado cuando no se encuentra el handler o el método Handle</exception>
         public async Task<TResponse> Send<TResponse>(ICommand<TResponse> command, CancellationToken cancellationToken = default)
         {
             if (command == null)
@@ -45,6 +78,15 @@ namespace CarritoComprasAPI.Core.Mediator
             return result;
         }
 
+        /// <summary>
+        /// Procesa una consulta usando el handler apropiado
+        /// </summary>
+        /// <typeparam name="TResponse">Tipo de respuesta de la consulta</typeparam>
+        /// <param name="query">Consulta a procesar</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Resultado del procesamiento de la consulta</returns>
+        /// <exception cref="ArgumentNullException">Lanzado cuando query es null</exception>
+        /// <exception cref="InvalidOperationException">Lanzado cuando no se encuentra el handler o el método Handle</exception>
         public async Task<TResponse> Send<TResponse>(IQuery<TResponse> query, CancellationToken cancellationToken = default)
         {
             if (query == null)
@@ -70,15 +112,27 @@ namespace CarritoComprasAPI.Core.Mediator
         }
     }
 
-    // Extensions para registrar el mediator
+    /// <summary>
+    /// Extensiones para configurar el mediator y handlers CQRS
+    /// </summary>
     public static class MediatorExtensions
     {
+        /// <summary>
+        /// Registra el SimpleMediator en el contenedor de dependencias
+        /// </summary>
+        /// <param name="services">Colección de servicios</param>
+        /// <returns>La colección de servicios para encadenamiento</returns>
         public static IServiceCollection AddSimpleMediator(this IServiceCollection services)
         {
             services.AddScoped<IMediator, SimpleMediator>();
             return services;
         }
 
+        /// <summary>
+        /// Registra todos los handlers CQRS (Command, Query y Domain Event handlers)
+        /// </summary>
+        /// <param name="services">Colección de servicios</param>
+        /// <returns>La colección de servicios para encadenamiento</returns>
         public static IServiceCollection AddCqrsHandlers(this IServiceCollection services)
         {
             // Registrar Domain Event Handlers

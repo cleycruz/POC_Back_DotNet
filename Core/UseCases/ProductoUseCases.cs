@@ -5,6 +5,9 @@ using CarritoComprasAPI.Core.Logging;
 
 namespace CarritoComprasAPI.Core.UseCases
 {
+    /// <summary>
+    /// Casos de uso para la gestión de productos con métricas de rendimiento integradas
+    /// </summary>
     public class ProductoUseCases : IProductoUseCases
     {
         private readonly IProductoRepository _productoRepository;
@@ -21,6 +24,13 @@ namespace CarritoComprasAPI.Core.UseCases
         private const string BuscarPorCategoriaOperation = "BuscarPorCategoria";
         private const string OperationKey = "Operation";
 
+        /// <summary>
+        /// Inicializa una nueva instancia de ProductoUseCases
+        /// </summary>
+        /// <param name="productoRepository">Repositorio de productos</param>
+        /// <param name="metricsService">Servicio de métricas de rendimiento</param>
+        /// <param name="structuredLogger">Logger estructurado</param>
+        /// <exception cref="ArgumentNullException">Lanzado cuando algún parámetro es null</exception>
         public ProductoUseCases(
             IProductoRepository productoRepository, 
             IPerformanceMetricsService metricsService,
@@ -31,6 +41,10 @@ namespace CarritoComprasAPI.Core.UseCases
             _structuredLogger = structuredLogger ?? throw new ArgumentNullException(nameof(structuredLogger));
         }
 
+        /// <summary>
+        /// Obtiene todos los productos disponibles con métricas de rendimiento
+        /// </summary>
+        /// <returns>Una colección de todos los productos</returns>
         public async Task<IEnumerable<Producto>> ObtenerTodosAsync()
         {
             return await _metricsService.ExecuteWithMetrics(
@@ -59,6 +73,11 @@ namespace CarritoComprasAPI.Core.UseCases
             );
         }
 
+        /// <summary>
+        /// Obtiene un producto específico por su identificador
+        /// </summary>
+        /// <param name="id">Identificador del producto</param>
+        /// <returns>El producto encontrado o null si no existe o el ID es inválido</returns>
         public async Task<Producto?> ObtenerPorIdAsync(int id)
         {
             return await _metricsService.ExecuteWithMetrics(
@@ -99,6 +118,12 @@ namespace CarritoComprasAPI.Core.UseCases
             );
         }
 
+        /// <summary>
+        /// Crea un nuevo producto en el sistema
+        /// </summary>
+        /// <param name="producto">Producto a crear</param>
+        /// <returns>El producto creado con su ID asignado</returns>
+        /// <exception cref="Exception">Lanzada cuando ocurre un error durante la creación</exception>
         public async Task<Producto> CrearAsync(Producto producto)
         {
             return await _metricsService.ExecuteWithMetrics(
@@ -138,6 +163,13 @@ namespace CarritoComprasAPI.Core.UseCases
             );
         }
 
+        /// <summary>
+        /// Actualiza un producto existente
+        /// </summary>
+        /// <param name="id">Identificador del producto a actualizar</param>
+        /// <param name="productoActualizado">Datos actualizados del producto</param>
+        /// <returns>El producto actualizado o null si no existe</returns>
+        /// <exception cref="Exception">Lanzada cuando ocurre un error durante la actualización</exception>
         public async Task<Producto?> ActualizarAsync(int id, Producto productoActualizado)
         {
             return await _metricsService.ExecuteWithMetrics(
@@ -190,6 +222,12 @@ namespace CarritoComprasAPI.Core.UseCases
             );
         }
 
+        /// <summary>
+        /// Elimina un producto del sistema
+        /// </summary>
+        /// <param name="id">Identificador del producto a eliminar</param>
+        /// <returns>True si se eliminó exitosamente, false si no existe</returns>
+        /// <exception cref="Exception">Lanzada cuando ocurre un error durante la eliminación</exception>
         public async Task<bool> EliminarAsync(int id)
         {
             return await _metricsService.ExecuteWithMetrics(
@@ -234,6 +272,12 @@ namespace CarritoComprasAPI.Core.UseCases
             );
         }
 
+        /// <summary>
+        /// Busca productos por categoría
+        /// </summary>
+        /// <param name="categoria">Categoría a buscar</param>
+        /// <returns>Productos que pertenecen a la categoría especificada, o colección vacía si la categoría es inválida</returns>
+        /// <exception cref="Exception">Lanzada cuando ocurre un error durante la búsqueda</exception>
         public async Task<IEnumerable<Producto>> BuscarPorCategoriaAsync(string categoria)
         {
             return await _metricsService.ExecuteWithMetrics(

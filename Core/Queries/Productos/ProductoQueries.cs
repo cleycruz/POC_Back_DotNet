@@ -5,15 +5,25 @@ using CarritoComprasAPI.Core.UseCases;
 
 namespace CarritoComprasAPI.Core.Queries.Productos
 {
-    // Query para obtener todos los productos
+    /// <summary>
+    /// Consulta para obtener todos los productos disponibles
+    /// </summary>
     public record ObtenerTodosProductosQuery() : IQuery<IEnumerable<Producto>>;
 
-    // Handler para obtener todos los productos
+    /// <summary>
+    /// Handler para procesar la consulta de todos los productos
+    /// </summary>
     public class ObtenerTodosProductosQueryHandler : IQueryHandler<ObtenerTodosProductosQuery, IEnumerable<Producto>>
     {
         private readonly IProductoUseCases _productoUseCases;
         private readonly IAppLogger _logger;
 
+        /// <summary>
+        /// Inicializa una nueva instancia del handler
+        /// </summary>
+        /// <param name="productoUseCases">Casos de uso de productos</param>
+        /// <param name="logger">Logger para registro de eventos</param>
+        /// <exception cref="ArgumentNullException">Lanzado cuando algún parámetro es null</exception>
         public ObtenerTodosProductosQueryHandler(IProductoUseCases productoUseCases, IAppLogger logger)
         {
             _productoUseCases = productoUseCases ?? throw new ArgumentNullException(nameof(productoUseCases));

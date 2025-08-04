@@ -5,6 +5,9 @@ using CarritoComprasAPI.Core.Logging;
 
 namespace CarritoComprasAPI.Core.UseCases
 {
+    /// <summary>
+    /// Casos de uso para la gestión del carrito de compras con métricas de rendimiento integradas
+    /// </summary>
     public class CarritoUseCases : ICarritoUseCases
     {
         private readonly ICarritoRepository _carritoRepository;
@@ -23,6 +26,14 @@ namespace CarritoComprasAPI.Core.UseCases
         private const string ResultadoExitoso = "Exitoso";
         private const string CarritoNoEncontrado = "CarritoNoEncontrado";
 
+        /// <summary>
+        /// Inicializa una nueva instancia de CarritoUseCases
+        /// </summary>
+        /// <param name="carritoRepository">Repositorio de carritos</param>
+        /// <param name="productoRepository">Repositorio de productos</param>
+        /// <param name="metricsService">Servicio de métricas de rendimiento</param>
+        /// <param name="structuredLogger">Logger estructurado</param>
+        /// <exception cref="ArgumentNullException">Lanzado cuando algún parámetro es null</exception>
         public CarritoUseCases(
             ICarritoRepository carritoRepository, 
             IProductoRepository productoRepository,
@@ -35,6 +46,12 @@ namespace CarritoComprasAPI.Core.UseCases
             _structuredLogger = structuredLogger ?? throw new ArgumentNullException(nameof(structuredLogger));
         }
 
+        /// <summary>
+        /// Obtiene el carrito de un usuario específico, creándolo si no existe
+        /// </summary>
+        /// <param name="usuarioId">Identificador del usuario</param>
+        /// <returns>El carrito del usuario</returns>
+        /// <exception cref="ArgumentException">Lanzado cuando el usuarioId es inválido</exception>
         public async Task<Carrito> ObtenerCarritoAsync(string usuarioId)
         {
             return await _metricsService.ExecuteWithMetrics(
@@ -76,6 +93,15 @@ namespace CarritoComprasAPI.Core.UseCases
             );
         }
 
+        /// <summary>
+        /// Agrega un item al carrito del usuario
+        /// </summary>
+        /// <param name="usuarioId">Identificador del usuario</param>
+        /// <param name="productoId">Identificador del producto a agregar</param>
+        /// <param name="cantidad">Cantidad del producto a agregar</param>
+        /// <returns>El carrito actualizado</returns>
+        /// <exception cref="ArgumentException">Lanzado cuando los parámetros son inválidos</exception>
+        /// <exception cref="InvalidOperationException">Lanzado cuando el producto no existe o no hay stock suficiente</exception>
         public async Task<Carrito> AgregarItemAsync(string usuarioId, int productoId, int cantidad)
         {
             return await _metricsService.ExecuteWithMetrics(
@@ -132,6 +158,15 @@ namespace CarritoComprasAPI.Core.UseCases
             );
         }
 
+        /// <summary>
+        /// Actualiza la cantidad de un item en el carrito
+        /// </summary>
+        /// <param name="usuarioId">Identificador del usuario</param>
+        /// <param name="productoId">Identificador del producto a actualizar</param>
+        /// <param name="cantidad">Nueva cantidad del producto</param>
+        /// <returns>El carrito actualizado</returns>
+        /// <exception cref="ArgumentException">Lanzado cuando los parámetros son inválidos</exception>
+        /// <exception cref="InvalidOperationException">Lanzado cuando el carrito o item no existe</exception>
         public async Task<Carrito> ActualizarCantidadAsync(string usuarioId, int productoId, int cantidad)
         {
             return await _metricsService.ExecuteWithMetrics(
@@ -192,6 +227,13 @@ namespace CarritoComprasAPI.Core.UseCases
             );
         }
 
+        /// <summary>
+        /// Elimina un item específico del carrito
+        /// </summary>
+        /// <param name="usuarioId">Identificador del usuario</param>
+        /// <param name="productoId">Identificador del producto a eliminar</param>
+        /// <returns>True si se eliminó exitosamente, false si el carrito o item no existe</returns>
+        /// <exception cref="ArgumentException">Lanzado cuando los parámetros son inválidos</exception>
         public async Task<bool> EliminarItemAsync(string usuarioId, int productoId)
         {
             return await _metricsService.ExecuteWithMetrics(
@@ -236,6 +278,12 @@ namespace CarritoComprasAPI.Core.UseCases
             );
         }
 
+        /// <summary>
+        /// Vacía completamente el carrito del usuario
+        /// </summary>
+        /// <param name="usuarioId">Identificador del usuario</param>
+        /// <returns>True si se vació exitosamente, false si el carrito no existe</returns>
+        /// <exception cref="ArgumentException">Lanzado cuando el usuarioId es inválido</exception>
         public async Task<bool> VaciarCarritoAsync(string usuarioId)
         {
             return await _metricsService.ExecuteWithMetrics(
@@ -281,6 +329,12 @@ namespace CarritoComprasAPI.Core.UseCases
             );
         }
 
+        /// <summary>
+        /// Obtiene el total del carrito del usuario
+        /// </summary>
+        /// <param name="usuarioId">Identificador del usuario</param>
+        /// <returns>El total del carrito o 0 si no existe</returns>
+        /// <exception cref="ArgumentException">Lanzado cuando el usuarioId es inválido</exception>
         public async Task<decimal> ObtenerTotalAsync(string usuarioId)
         {
             return await _metricsService.ExecuteWithMetrics(
