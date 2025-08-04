@@ -1,0 +1,82 @@
+<div class="app-container">
+  <!-- Modern Navigation Header -->
+  <header class="main-navbar">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <div class="brand-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="app-title">{{ title }}</h1>
+          <span class="app-subtitle">Tu tienda online moderna</span>
+        </div>
+      </div>
+      
+      <nav class="nav-links">
+        <a routerLink="/productos" routerLinkActive="active" class="nav-link">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+          </svg>
+          <span>Productos</span>
+        </a>
+        <a routerLink="/carrito" routerLinkActive="active" class="nav-link">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span>Mi Carrito</span>
+          <div class="nav-badge" *ngIf="getTotalItems() > 0">{{ getTotalItems() }}</div>
+        </a>
+      </nav>
+    </div>
+    
+    <!-- Animated background -->
+    <div class="nav-bg-animation">
+      <div class="nav-particle"></div>
+      <div class="nav-particle"></div>
+      <div class="nav-particle"></div>
+      <div class="nav-particle"></div>
+      <div class="nav-particle"></div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Modern Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>Carrito de Compras</h3>
+          <p>Aplicación Angular moderna conectada a API REST</p>
+        </div>
+        <div class="footer-section">
+          <h4>Tecnologías</h4>
+          <ul>
+            <li>Angular 17</li>
+            <li>TypeScript</li>
+            <li>API REST</li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Servidor</h4>
+          <p class="server-status">
+            <span class="status-indicator"></span>
+            localhost:5063
+          </p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Carrito de Compras. Diseño moderno y profesional.</p>
+      </div>
+    </div>
+  </footer>
+</div>

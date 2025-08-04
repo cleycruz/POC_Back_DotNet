@@ -1,0 +1,133 @@
+<div class="productos-container">
+  <!-- Header con animación -->
+  <div class="productos-header animate-fade-in-up">
+    <h1 class="productos-title">🚀 Catálogo de Productos</h1>
+    <p class="productos-subtitle">Descubre nuestra selección premium de productos con tecnología de vanguardia</p>
+  </div>
+
+  <!-- Form Section con animación -->
+  <div class="form-section animate-fade-in-scale animate-delay-200">
+    <h2>{{ editingProduct ? '✏️ Editar Producto' : '➕ Agregar Nuevo Producto' }}</h2>
+    
+    <div class="form-grid">
+      <div class="form-group animate-slide-in-left animate-delay-300">
+        <label for="nombre">Nombre del Producto</label>
+        <input 
+          type="text" 
+          id="nombre"
+          [(ngModel)]="newProduct.nombre" 
+          placeholder="Ingrese el nombre del producto..."
+          required>
+      </div>
+      
+      <div class="form-group animate-slide-in-right animate-delay-300">
+        <label for="precio">Precio ($)</label>
+        <input 
+          type="number" 
+          id="precio"
+          [(ngModel)]="newProduct.precio" 
+          placeholder="0.00"
+          step="0.01"
+          min="0"
+          required>
+      </div>
+      
+      <div class="form-group animate-slide-in-left animate-delay-400">
+        <label for="stock">Stock Disponible</label>
+        <input 
+          type="number" 
+          id="stock"
+          [(ngModel)]="newProduct.stock" 
+          placeholder="Cantidad en inventario"
+          min="0"
+          required>
+      </div>
+      
+      <div class="form-group animate-slide-in-right animate-delay-400">
+        <label for="categoria">Categoría</label>
+        <input 
+          type="text" 
+          id="categoria"
+          [(ngModel)]="newProduct.categoria" 
+          placeholder="Ej: Electrónicos, Ropa, Hogar..."
+          required>
+      </div>
+    </div>
+    
+    <div class="form-group animate-fade-in-up animate-delay-500">
+      <label for="descripcion">Descripción</label>
+      <textarea 
+        id="descripcion"
+        [(ngModel)]="newProduct.descripcion" 
+        placeholder="Describe las características y beneficios del producto..."
+        rows="3"
+        required></textarea>
+    </div>
+    
+    <div class="form-actions animate-bounce-in animate-delay-600">
+      <button class="btn btn-success" (click)="editingProduct ? updateProduct() : createProduct()">
+        {{ editingProduct ? '💾 Actualizar' : '🎯 Crear Producto' }}
+      </button>
+      <button class="btn btn-secondary" (click)="cancelEdit()" *ngIf="editingProduct">
+        ❌ Cancelar
+      </button>
+      <button class="btn btn-outline" (click)="resetForm()">
+        🔄 Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state animate-fade-in-up">
+    <div class="loading-spinner"></div>
+    <p>Cargando productos increíbles...</p>
+  </div>
+
+  <!-- Products Grid -->
+  <div *ngIf="!loading" class="productos-grid">
+    <div *ngFor="let producto of productos; let i = index" 
+         class="product-card animate-fade-in-scale"
+         [style.animation-delay.ms]="i * 100">
+      
+      <div class="product-header">
+        <div class="product-id">ID: {{ producto.id }}</div>
+        <div class="price">${{ producto.precio | number:'1.2-2' }}</div>
+      </div>
+      
+      <div class="product-content">
+        <h3>{{ producto.nombre }}</h3>
+        <p class="description">{{ producto.descripcion }}</p>
+        <p class="stock">{{ producto.stock }} unidades disponibles</p>
+        <div class="category">{{ producto.categoria }}</div>
+      </div>
+      
+      <div class="product-actions">
+        <button class="btn btn-success" 
+                (click)="addToCart(producto)" 
+                [disabled]="producto.stock === 0">
+          {{ producto.stock === 0 ? '🚫 Sin Stock' : '🛒 Agregar al Carrito' }}
+        </button>
+        <button class="btn btn-info" (click)="editProduct(producto)">
+          ✏️ Editar
+        </button>
+        <button class="btn btn-error" (click)="deleteProduct(producto.id)">
+          🗑️ Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && productos.length === 0" class="empty-state animate-bounce-in">
+    <div class="empty-icon">📦</div>
+    <h3 class="empty-title">¡Catálogo Vacío!</h3>
+    <p class="empty-message">
+      Aún no tienes productos en tu catálogo. Comienza creando tu primer producto y construye un inventario increíble.
+    </p>
+    <div class="empty-actions">
+      <button class="btn btn-primary" (click)="scrollToForm()">
+        🚀 Crear Primer Producto
+      </button>
+    </div>
+  </div>
+</div>

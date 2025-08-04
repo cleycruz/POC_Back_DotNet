@@ -1,0 +1,30 @@
+{
+  "folders": [
+    {
+      "name": "🔧 Backend (.NET Core)",
+      "path": "./backend"
+    },
+    {
+      "name": "🌐 Frontend (Angular)", 
+      "path": "./frontend"
+    },
+    {
+      "name": "��️ Infrastructure (Terraform)",
+      "path": "./infrastructure"
+    },
+    {
+      "name": "📚 Documentation",
+      "path": "./docs"
+    }
+  ],
+  "settings": {
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "dotnet.defaultSolution": "./backend/CarritoCompras.sln",
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/bin": true,
+      "**/obj": true,
+      "**/.terraform": true
+    }
+  }
+}
