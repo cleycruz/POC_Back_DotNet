@@ -6,6 +6,9 @@ using CarritoComprasAPI.Core.Caching;
 using CarritoComprasAPI.Core.Validators;
 using CarritoComprasAPI.Core.EventSourcing;
 using CarritoComprasAPI.Core.EventSourcing.Store;
+using CarritoComprasAPI.Core.Configuration;
+using CarritoComprasAPI.Core.Logging;
+using CarritoComprasAPI.Core.UseCases;
 using FluentValidation;
 using System.Reflection;
 
@@ -36,6 +39,11 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddSingleton<IProductoRepository, InMemoryProductoRepository>();
 builder.Services.AddSingleton<ICarritoRepository, InMemoryCarritoRepository>();
 builder.Services.AddSingleton<IAppLogger, ConsoleLogger>();
+builder.Services.AddScoped<IStructuredLogger, StructuredLogger>();
+
+// Registrar UseCases (hexagonal architecture)
+builder.Services.AddScoped<IProductoUseCases, ProductoUseCases>();
+builder.Services.AddScoped<ICarritoUseCases, CarritoUseCases>();
 
 // Registrar servicios de caché
 builder.Services.AddMemoryCache(); // Esto registra IMemoryCache
@@ -68,10 +76,13 @@ builder.Services.AddSingleton<ICacheInvalidationService, CacheInvalidationServic
 builder.Services.AddSingleton(new CacheConfiguration
 {
     EnableCaching = true,
-    DefaultExpiration = TimeSpan.FromMinutes(15),
-    ProductosExpiration = TimeSpan.FromMinutes(30),
-    CarritosExpiration = TimeSpan.FromMinutes(5)
+    DefaultExpiration = TimeSpan.FromMinutes(BusinessConstants.CACHE_EXPIRACION_DEFECTO_MINUTOS),
+    ProductosExpiration = TimeSpan.FromMinutes(BusinessConstants.CACHE_PRODUCTOS_EXPIRACION_MINUTOS),
+    CarritosExpiration = TimeSpan.FromMinutes(BusinessConstants.CACHE_CARRITOS_EXPIRACION_MINUTOS)
 });
+
+// Registrar servicios de performance y alertas
+builder.Services.AddPerformanceAndAlerting();
 
 // Configurar CORS
 builder.Services.AddCors(options =>
@@ -102,6 +113,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+
+// Servir archivos estáticos para el dashboard
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAuthorization();
 app.MapControllers();
 

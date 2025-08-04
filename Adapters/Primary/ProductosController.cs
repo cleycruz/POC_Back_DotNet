@@ -3,32 +3,95 @@ using CarritoComprasAPI.Core.Mediator;
 using CarritoComprasAPI.Core.Commands.Productos;
 using CarritoComprasAPI.Core.Queries.Productos;
 using CarritoComprasAPI.Core.Domain;
+using CarritoComprasAPI.Core.Logging;
+using CarritoComprasAPI.Core.Configuration;
 using CarritoComprasAPI.DTOs;
 
 namespace CarritoComprasAPI.Adapters.Primary
 {
+    /// <summary>
+    /// Controlador REST para la gestión de productos del sistema de carrito de compras.
+    /// Implementa operaciones CRUD con validaciones de dominio, logging estructurado y métricas de performance.
+    /// </summary>
+    /// <remarks>
+    /// Este controlador sigue los principios de DDD y Arquitectura Hexagonal:
+    /// - Utiliza Value Objects para validaciones
+    /// - Implementa CQRS para separar lecturas de escrituras
+    /// - Registra Domain Events automáticamente
+    /// - Proporciona logging estructurado para auditoría y debugging
+    /// </remarks>
     [Route("api/productos")]
+    [ApiController]
+    [Produces("application/json")]
     public class ProductosController : BaseController
     {
         private readonly IMediator _mediator;
+        private readonly IStructuredLogger _structuredLogger;
 
-        public ProductosController(IMediator mediator)
+        /// <summary>
+        /// Constructor del controlador de productos
+        /// </summary>
+        /// <param name="mediator">Mediator para enviar commands y queries</param>
+        /// <param name="structuredLogger">Logger estructurado para auditoría y métricas</param>
+        /// <exception cref="ArgumentNullException">Si algún parámetro es nulo</exception>
+        public ProductosController(IMediator mediator, IStructuredLogger structuredLogger)
         {
             _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+            _structuredLogger = structuredLogger ?? throw new ArgumentNullException(nameof(structuredLogger));
         }
 
         /// <summary>
-        /// Obtiene todos los productos
+        /// Obtiene todos los productos disponibles en el sistema
         /// </summary>
+        /// <returns>Lista de productos con información completa</returns>
+        /// <response code="200">Lista de productos obtenida exitosamente</response>
+        /// <response code="500">Error interno del servidor</response>
+        /// <example>
+        /// GET /api/productos
+        /// 
+        /// Respuesta:
+        /// [
+        ///   {
+        ///     "id": 1,
+        ///     "nombre": "Laptop Gaming",
+        ///     "precio": 1299.99,
+        ///     "stock": 15,
+        ///     "categoria": "Electrónicos"
+        ///   }
+        /// ]
+        /// </example>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<ProductoDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<ProductoDto>>> ObtenerTodos()
         {
-            return await ExecuteAsync(async () =>
-            {
-                var query = new ObtenerTodosProductosQuery();
-                var productos = await _mediator.Send(query);
-                return productos.Select(MapearADto);
-            });
+            var requestId = Guid.NewGuid().ToString();
+            var usuarioId = ObtenerUsuarioActual();
+
+            return await _structuredLogger.EjecutarConLogging(
+                "ObtenerTodosProductos",
+                usuarioId,
+                requestId,
+                async () =>
+                {
+                    var query = new ObtenerTodosProductosQuery();
+                    var productos = await _mediator.Send(query);
+                    var productosDto = productos.Select(MapearADto).ToList();
+                    
+                    _structuredLogger.LogCache("ProductosQuery", "todos_productos");
+                    
+                    return Ok(productosDto);
+                });
+        }
+
+        /// <summary>
+        /// Obtiene el ID del usuario actual desde el contexto HTTP
+        /// </summary>
+        /// <returns>ID del usuario o "anonimo" si no está autenticado</returns>
+        private string ObtenerUsuarioActual()
+        {
+            // En un sistema real esto vendría del JWT token o claims
+            return HttpContext.User?.Identity?.Name ?? "usuario_anonimo";
         }
 
         /// <summary>

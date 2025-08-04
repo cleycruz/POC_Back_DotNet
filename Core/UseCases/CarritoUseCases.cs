@@ -1,5 +1,7 @@
 using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Ports;
+using CarritoComprasAPI.Core.Performance;
+using CarritoComprasAPI.Core.Logging;
 
 namespace CarritoComprasAPI.Core.UseCases
 {
@@ -7,224 +9,306 @@ namespace CarritoComprasAPI.Core.UseCases
     {
         private readonly ICarritoRepository _carritoRepository;
         private readonly IProductoRepository _productoRepository;
-        private readonly IAppLogger _logger;
+        private readonly IPerformanceMetricsService _metricsService;
+        private readonly IStructuredLogger _structuredLogger;
+
+        // Constantes para evitar duplicación de strings literales
+        private const string CarritoEntityType = "Carrito";
+        private const string ObtenerCarritoOperation = "ObtenerCarrito";
+        private const string AgregarItemOperation = "AgregarItem";
+        private const string ActualizarCantidadOperation = "ActualizarCantidad";
+        private const string EliminarItemOperation = "EliminarItem";
+        private const string LimpiarCarritoOperation = "LimpiarCarrito";
+        private const string OperationKey = "Operation";
+        private const string ResultadoExitoso = "Exitoso";
+        private const string CarritoNoEncontrado = "CarritoNoEncontrado";
 
         public CarritoUseCases(
             ICarritoRepository carritoRepository, 
             IProductoRepository productoRepository,
-            IAppLogger logger)
+            IPerformanceMetricsService metricsService,
+            IStructuredLogger structuredLogger)
         {
             _carritoRepository = carritoRepository ?? throw new ArgumentNullException(nameof(carritoRepository));
             _productoRepository = productoRepository ?? throw new ArgumentNullException(nameof(productoRepository));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _metricsService = metricsService ?? throw new ArgumentNullException(nameof(metricsService));
+            _structuredLogger = structuredLogger ?? throw new ArgumentNullException(nameof(structuredLogger));
         }
 
         public async Task<Carrito> ObtenerCarritoAsync(string usuarioId)
         {
-            try
-            {
-                _logger.LogInformation("Obteniendo carrito para usuario: {UsuarioId}", usuarioId);
-                
-                ValidarUsuarioId(usuarioId);
-
-                var carrito = await _carritoRepository.ObtenerPorUsuarioAsync(usuarioId);
-                
-                if (carrito == null)
+            return await _metricsService.ExecuteWithMetrics(
+                "CarritoUseCases.ObtenerCarrito",
+                async () =>
                 {
-                    _logger.LogInformation("Carrito no encontrado para usuario {UsuarioId}, creando nuevo carrito", usuarioId);
-                    carrito = Carrito.Crear(usuarioId);
-                    carrito = await _carritoRepository.CrearAsync(carrito);
-                }
+                    try
+                    {
+                        _structuredLogger.LogOperacionDominio(ObtenerCarritoOperation, CarritoEntityType, usuarioId, "Iniciando obtención de carrito");
+                        
+                        ValidarUsuarioId(usuarioId);
 
-                _logger.LogInformation("Carrito obtenido para usuario {UsuarioId} con {ItemCount} items", 
-                    usuarioId, carrito.CantidadItems);
-                
-                return carrito;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener carrito para usuario: {UsuarioId}", usuarioId);
-                throw;
-            }
+                        var carrito = await _carritoRepository.ObtenerPorUsuarioAsync(usuarioId);
+                        
+                        if (carrito == null)
+                        {
+                            _structuredLogger.LogOperacionDominio(ObtenerCarritoOperation, CarritoEntityType, usuarioId, "Carrito no encontrado, creando nuevo carrito");
+                            carrito = Carrito.Crear(usuarioId);
+                            carrito = await _carritoRepository.CrearAsync(carrito);
+                        }
+
+                        _structuredLogger.LogOperacionDominio(ObtenerCarritoOperation, CarritoEntityType, usuarioId, 
+                            $"Carrito obtenido exitosamente con {carrito.CantidadItems} items", 
+                            new { ItemCount = carrito.CantidadItems, CarritoId = carrito.Id });
+                        
+                        return carrito;
+                    }
+                    catch (Exception ex)
+                    {
+                        _structuredLogger.LogError(ObtenerCarritoOperation, ex, new { UsuarioId = usuarioId });
+                        throw;
+                    }
+                },
+                new Dictionary<string, object> 
+                { 
+                    ["UsuarioId"] = usuarioId,
+                    [OperationKey] = "GetCart"
+                }
+            );
         }
 
         public async Task<Carrito> AgregarItemAsync(string usuarioId, int productoId, int cantidad)
         {
-            try
-            {
-                _logger.LogInformation("Agregando {Cantidad} unidades del producto {ProductoId} al carrito del usuario {UsuarioId}", 
-                    cantidad, productoId, usuarioId);
-                
-                ValidarUsuarioId(usuarioId);
-                ValidarCantidad(cantidad);
-
-                // Obtener producto
-                var producto = await _productoRepository.ObtenerPorIdAsync(productoId);
-                if (producto == null)
+            return await _metricsService.ExecuteWithMetrics(
+                "CarritoUseCases.AgregarItem",
+                async () =>
                 {
-                    throw new InvalidOperationException($"Producto con ID {productoId} no encontrado");
+                    _structuredLogger.LogOperacionDominio(
+                        AgregarItemOperation,
+                        CarritoEntityType,
+                        usuarioId,
+                        $"Agregando {cantidad} unidades del producto {productoId} al carrito del usuario {usuarioId}",
+                        new { UsuarioId = usuarioId, ProductoId = productoId, Cantidad = cantidad }
+                    );
+                    
+                    ValidarUsuarioId(usuarioId);
+                    ValidarCantidad(cantidad);
+
+                    // Obtener producto
+                    var producto = await _productoRepository.ObtenerPorIdAsync(productoId);
+                    if (producto == null)
+                    {
+                        throw new InvalidOperationException($"Producto con ID {productoId} no encontrado");
+                    }
+
+                    // Obtener o crear carrito
+                    var carrito = await ObtenerCarritoAsync(usuarioId);
+
+                    // Validar stock disponible
+                    var cantidadEnCarrito = carrito.ObtenerItem(productoId)?.CantidadItem.Value ?? 0;
+                    var cantidadTotal = cantidadEnCarrito + cantidad;
+                    
+                    if (!producto.TieneStock(cantidadTotal))
+                    {
+                        throw new InvalidOperationException(
+                            $"Stock insuficiente. Stock disponible: {producto.StockProducto.Value}, cantidad en carrito: {cantidadEnCarrito}, cantidad solicitada: {cantidad}");
+                    }
+
+                    // Agregar item al carrito
+                    carrito.AgregarItem(producto, cantidad);
+
+                    // Guardar carrito
+                    var carritoActualizado = await _carritoRepository.ActualizarAsync(carrito);
+                    
+                    _structuredLogger.LogOperacionDominio(
+                        AgregarItemOperation,
+                        CarritoEntityType,
+                        usuarioId,
+                        $"Item agregado exitosamente al carrito del usuario {usuarioId}",
+                        new { UsuarioId = usuarioId, ProductoId = productoId, Resultado = ResultadoExitoso }
+                    );
+                    
+                    return carritoActualizado;
                 }
-
-                // Obtener o crear carrito
-                var carrito = await ObtenerCarritoAsync(usuarioId);
-
-                // Validar stock disponible
-                var cantidadEnCarrito = carrito.ObtenerItem(productoId)?.CantidadItem.Value ?? 0;
-                var cantidadTotal = cantidadEnCarrito + cantidad;
-                
-                if (!producto.TieneStock(cantidadTotal))
-                {
-                    throw new InvalidOperationException(
-                        $"Stock insuficiente. Stock disponible: {producto.StockProducto.Value}, cantidad en carrito: {cantidadEnCarrito}, cantidad solicitada: {cantidad}");
-                }
-
-                // Agregar item al carrito
-                carrito.AgregarItem(producto, cantidad);
-
-                // Guardar carrito
-                var carritoActualizado = await _carritoRepository.ActualizarAsync(carrito);
-                
-                _logger.LogInformation("Item agregado exitosamente al carrito del usuario {UsuarioId}", usuarioId);
-                
-                return carritoActualizado;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al agregar item al carrito. Usuario: {UsuarioId}, Producto: {ProductoId}, Cantidad: {Cantidad}", 
-                    usuarioId, productoId, cantidad);
-                throw;
-            }
+            );
         }
 
         public async Task<Carrito> ActualizarCantidadAsync(string usuarioId, int productoId, int cantidad)
         {
-            try
-            {
-                _logger.LogInformation("Actualizando cantidad del producto {ProductoId} a {Cantidad} en el carrito del usuario {UsuarioId}", 
-                    productoId, cantidad, usuarioId);
-                
-                ValidarUsuarioId(usuarioId);
-
-                var carrito = await _carritoRepository.ObtenerPorUsuarioAsync(usuarioId);
-                if (carrito == null)
+            return await _metricsService.ExecuteWithMetrics(
+                "CarritoUseCases.ActualizarCantidad",
+                async () =>
                 {
-                    throw new InvalidOperationException($"Carrito no encontrado para el usuario {usuarioId}");
+                    _structuredLogger.LogOperacionDominio(
+                        ActualizarCantidadOperation,
+                        CarritoEntityType,
+                        usuarioId,
+                        $"Actualizando cantidad del producto {productoId} a {cantidad} en el carrito del usuario {usuarioId}",
+                        new { UsuarioId = usuarioId, ProductoId = productoId, Cantidad = cantidad }
+                    );
+                    
+                    ValidarUsuarioId(usuarioId);
+
+                    var carrito = await _carritoRepository.ObtenerPorUsuarioAsync(usuarioId);
+                    if (carrito == null)
+                    {
+                        throw new InvalidOperationException($"Carrito no encontrado para el usuario {usuarioId}");
+                    }
+
+                    if (cantidad <= 0)
+                    {
+                        // Si la cantidad es 0 o negativa, eliminar el item
+                        return await EliminarItemInternoAsync(carrito, productoId);
+                    }
+
+                    // Validar que el producto existe
+                    var producto = await _productoRepository.ObtenerPorIdAsync(productoId);
+                    if (producto == null)
+                    {
+                        throw new InvalidOperationException($"Producto con ID {productoId} no encontrado");
+                    }
+
+                    // Validar stock
+                    if (!producto.TieneStock(cantidad))
+                    {
+                        throw new InvalidOperationException(
+                            $"Stock insuficiente. Stock disponible: {producto.StockProducto.Value}, cantidad solicitada: {cantidad}");
+                    }
+
+                    // Actualizar cantidad
+                    carrito.ActualizarCantidadItem(productoId, cantidad);
+
+                    var carritoActualizado = await _carritoRepository.ActualizarAsync(carrito);
+                    
+                    _structuredLogger.LogOperacionDominio(
+                        ActualizarCantidadOperation,
+                        CarritoEntityType,
+                        usuarioId,
+                        $"Cantidad actualizada exitosamente en el carrito del usuario {usuarioId}",
+                        new { UsuarioId = usuarioId, ProductoId = productoId, Resultado = ResultadoExitoso }
+                    );
+                    
+                    return carritoActualizado;
                 }
-
-                if (cantidad <= 0)
-                {
-                    // Si la cantidad es 0 o negativa, eliminar el item
-                    return await EliminarItemInternoAsync(carrito, productoId);
-                }
-
-                // Validar que el producto existe
-                var producto = await _productoRepository.ObtenerPorIdAsync(productoId);
-                if (producto == null)
-                {
-                    throw new InvalidOperationException($"Producto con ID {productoId} no encontrado");
-                }
-
-                // Validar stock
-                if (!producto.TieneStock(cantidad))
-                {
-                    throw new InvalidOperationException(
-                        $"Stock insuficiente. Stock disponible: {producto.StockProducto.Value}, cantidad solicitada: {cantidad}");
-                }
-
-                // Actualizar cantidad
-                carrito.ActualizarCantidadItem(productoId, cantidad);
-
-                var carritoActualizado = await _carritoRepository.ActualizarAsync(carrito);
-                
-                _logger.LogInformation("Cantidad actualizada exitosamente en el carrito del usuario {UsuarioId}", usuarioId);
-                
-                return carritoActualizado;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al actualizar cantidad en carrito. Usuario: {UsuarioId}, Producto: {ProductoId}, Cantidad: {Cantidad}", 
-                    usuarioId, productoId, cantidad);
-                throw;
-            }
+            );
         }
 
         public async Task<bool> EliminarItemAsync(string usuarioId, int productoId)
         {
-            try
-            {
-                _logger.LogInformation("Eliminando producto {ProductoId} del carrito del usuario {UsuarioId}", 
-                    productoId, usuarioId);
-                
-                ValidarUsuarioId(usuarioId);
-
-                var carrito = await _carritoRepository.ObtenerPorUsuarioAsync(usuarioId);
-                if (carrito == null)
+            return await _metricsService.ExecuteWithMetrics(
+                "CarritoUseCases.EliminarItem",
+                async () =>
                 {
-                    _logger.LogWarning("Carrito no encontrado para el usuario {UsuarioId}", usuarioId);
-                    return false;
-                }
+                    _structuredLogger.LogOperacionDominio(
+                        EliminarItemOperation,
+                        CarritoEntityType,
+                        usuarioId,
+                        $"Eliminando producto {productoId} del carrito del usuario {usuarioId}",
+                        new { UsuarioId = usuarioId, ProductoId = productoId }
+                    );
+                    
+                    ValidarUsuarioId(usuarioId);
 
-                await EliminarItemInternoAsync(carrito, productoId);
-                
-                _logger.LogInformation("Item eliminado exitosamente del carrito del usuario {UsuarioId}", usuarioId);
-                
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al eliminar item del carrito. Usuario: {UsuarioId}, Producto: {ProductoId}", 
-                    usuarioId, productoId);
-                throw;
-            }
+                    var carrito = await _carritoRepository.ObtenerPorUsuarioAsync(usuarioId);
+                    if (carrito == null)
+                    {
+                        _structuredLogger.LogOperacionDominio(
+                            EliminarItemOperation,
+                            CarritoEntityType,
+                            usuarioId,
+                            $"Carrito no encontrado para el usuario {usuarioId}",
+                            new { UsuarioId = usuarioId, Resultado = CarritoNoEncontrado }
+                        );
+                        return false;
+                    }
+
+                    await EliminarItemInternoAsync(carrito, productoId);
+                    
+                    _structuredLogger.LogOperacionDominio(
+                        EliminarItemOperation,
+                        CarritoEntityType,
+                        usuarioId,
+                        $"Item eliminado exitosamente del carrito del usuario {usuarioId}",
+                        new { UsuarioId = usuarioId, ProductoId = productoId, Resultado = ResultadoExitoso }
+                    );
+                    
+                    return true;
+                }
+            );
         }
 
         public async Task<bool> VaciarCarritoAsync(string usuarioId)
         {
-            try
-            {
-                _logger.LogInformation("Vaciando carrito del usuario {UsuarioId}", usuarioId);
-                
-                ValidarUsuarioId(usuarioId);
-
-                var carrito = await _carritoRepository.ObtenerPorUsuarioAsync(usuarioId);
-                if (carrito == null)
+            return await _metricsService.ExecuteWithMetrics(
+                "CarritoUseCases.VaciarCarrito",
+                async () =>
                 {
-                    _logger.LogWarning("Carrito no encontrado para el usuario {UsuarioId}", usuarioId);
-                    return false;
-                }
+                    _structuredLogger.LogOperacionDominio(
+                        LimpiarCarritoOperation,
+                        CarritoEntityType,
+                        usuarioId,
+                        $"Vaciando carrito del usuario {usuarioId}",
+                        new { UsuarioId = usuarioId }
+                    );
+                    
+                    ValidarUsuarioId(usuarioId);
 
-                carrito.Vaciar();
-                await _carritoRepository.ActualizarAsync(carrito);
-                
-                _logger.LogInformation("Carrito vaciado exitosamente para el usuario {UsuarioId}", usuarioId);
-                
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al vaciar carrito del usuario: {UsuarioId}", usuarioId);
-                throw;
-            }
+                    var carrito = await _carritoRepository.ObtenerPorUsuarioAsync(usuarioId);
+                    if (carrito == null)
+                    {
+                        _structuredLogger.LogOperacionDominio(
+                            LimpiarCarritoOperation,
+                            CarritoEntityType,
+                            usuarioId,
+                            $"Carrito no encontrado para el usuario {usuarioId}",
+                            new { UsuarioId = usuarioId, Resultado = CarritoNoEncontrado }
+                        );
+                        return false;
+                    }
+
+                    carrito.Vaciar();
+                    await _carritoRepository.ActualizarAsync(carrito);
+                    
+                    _structuredLogger.LogOperacionDominio(
+                        LimpiarCarritoOperation,
+                        CarritoEntityType,
+                        usuarioId,
+                        $"Carrito vaciado exitosamente para el usuario {usuarioId}",
+                        new { UsuarioId = usuarioId, Resultado = ResultadoExitoso }
+                    );
+                    
+                    return true;
+                }
+            );
         }
 
         public async Task<decimal> ObtenerTotalAsync(string usuarioId)
         {
-            try
-            {
-                _logger.LogInformation("Obteniendo total del carrito para usuario: {UsuarioId}", usuarioId);
-                
-                var carrito = await ObtenerCarritoAsync(usuarioId);
-                var total = carrito.Total;
-                
-                _logger.LogInformation("Total calculado para usuario {UsuarioId}: {Total:C}", usuarioId, total);
-                
-                return total;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al obtener total del carrito para usuario: {UsuarioId}", usuarioId);
-                throw;
-            }
+            return await _metricsService.ExecuteWithMetrics(
+                "CarritoUseCases.ObtenerTotal",
+                async () =>
+                {
+                    _structuredLogger.LogOperacionDominio(
+                        "ObtenerTotal",
+                        CarritoEntityType,
+                        usuarioId,
+                        $"Obteniendo total del carrito para usuario: {usuarioId}",
+                        new { UsuarioId = usuarioId }
+                    );
+                    
+                    var carrito = await ObtenerCarritoAsync(usuarioId);
+                    var total = carrito.Total;
+                    
+                    _structuredLogger.LogOperacionDominio(
+                        "ObtenerTotal",
+                        CarritoEntityType,
+                        usuarioId,
+                        $"Total calculado para usuario {usuarioId}: {total:C}",
+                        new { UsuarioId = usuarioId, Total = total, Resultado = ResultadoExitoso }
+                    );
+                    
+                    return total;
+                }
+            );
         }
 
         private async Task<Carrito> EliminarItemInternoAsync(Carrito carrito, int productoId)

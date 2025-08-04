@@ -1,6 +1,7 @@
 using CarritoComprasAPI.Core.Queries;
 using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Ports;
+using CarritoComprasAPI.Core.UseCases;
 
 namespace CarritoComprasAPI.Core.Queries.Productos
 {
@@ -10,12 +11,12 @@ namespace CarritoComprasAPI.Core.Queries.Productos
     // Handler para obtener todos los productos
     public class ObtenerTodosProductosQueryHandler : IQueryHandler<ObtenerTodosProductosQuery, IEnumerable<Producto>>
     {
-        private readonly IProductoRepository _repository;
+        private readonly IProductoUseCases _productoUseCases;
         private readonly IAppLogger _logger;
 
-        public ObtenerTodosProductosQueryHandler(IProductoRepository repository, IAppLogger logger)
+        public ObtenerTodosProductosQueryHandler(IProductoUseCases productoUseCases, IAppLogger logger)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _productoUseCases = productoUseCases ?? throw new ArgumentNullException(nameof(productoUseCases));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -23,17 +24,17 @@ namespace CarritoComprasAPI.Core.Queries.Productos
         {
             try
             {
-                _logger.LogInformation("Obteniendo todos los productos");
+                _logger.LogInformation("Query CQRS: Obteniendo todos los productos via UseCases");
                 
-                var productos = await _repository.ObtenerTodosAsync();
+                var productos = await _productoUseCases.ObtenerTodosAsync();
                 
-                _logger.LogInformation("Se obtuvieron {Count} productos", productos.Count());
+                _logger.LogInformation("Query CQRS: Se obtuvieron {Count} productos via UseCases", productos.Count());
                 
                 return productos;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener todos los productos");
+                _logger.LogError(ex, "Query CQRS: Error al obtener todos los productos");
                 throw;
             }
         }
@@ -45,12 +46,12 @@ namespace CarritoComprasAPI.Core.Queries.Productos
     // Handler para obtener producto por ID
     public class ObtenerProductoPorIdQueryHandler : IQueryHandler<ObtenerProductoPorIdQuery, Producto?>
     {
-        private readonly IProductoRepository _repository;
+        private readonly IProductoUseCases _productoUseCases;
         private readonly IAppLogger _logger;
 
-        public ObtenerProductoPorIdQueryHandler(IProductoRepository repository, IAppLogger logger)
+        public ObtenerProductoPorIdQueryHandler(IProductoUseCases productoUseCases, IAppLogger logger)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _productoUseCases = productoUseCases ?? throw new ArgumentNullException(nameof(productoUseCases));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -58,30 +59,30 @@ namespace CarritoComprasAPI.Core.Queries.Productos
         {
             try
             {
-                _logger.LogInformation("Obteniendo producto con ID: {ProductoId}", query.Id);
+                _logger.LogInformation("Query CQRS: Obteniendo producto con ID: {ProductoId} via UseCases", query.Id);
                 
                 if (query.Id <= 0)
                 {
-                    _logger.LogWarning("ID de producto inválido: {ProductoId}", query.Id);
+                    _logger.LogWarning("Query CQRS: ID de producto inválido: {ProductoId}", query.Id);
                     return null;
                 }
 
-                var producto = await _repository.ObtenerPorIdAsync(query.Id);
+                var producto = await _productoUseCases.ObtenerPorIdAsync(query.Id);
                 
                 if (producto == null)
                 {
-                    _logger.LogWarning("Producto con ID {ProductoId} no encontrado", query.Id);
+                    _logger.LogWarning("Query CQRS: Producto con ID {ProductoId} no encontrado", query.Id);
                 }
                 else
                 {
-                    _logger.LogInformation("Producto {ProductoNombre} encontrado", producto.Nombre.Value);
+                    _logger.LogInformation("Query CQRS: Producto {ProductoNombre} encontrado via UseCases", producto.Nombre.Value);
                 }
 
                 return producto;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al obtener producto con ID: {ProductoId}", query.Id);
+                _logger.LogError(ex, "Query CQRS: Error al obtener producto con ID: {ProductoId}", query.Id);
                 throw;
             }
         }
@@ -93,12 +94,12 @@ namespace CarritoComprasAPI.Core.Queries.Productos
     // Handler para buscar por categoría
     public class BuscarProductosPorCategoriaQueryHandler : IQueryHandler<BuscarProductosPorCategoriaQuery, IEnumerable<Producto>>
     {
-        private readonly IProductoRepository _repository;
+        private readonly IProductoUseCases _productoUseCases;
         private readonly IAppLogger _logger;
 
-        public BuscarProductosPorCategoriaQueryHandler(IProductoRepository repository, IAppLogger logger)
+        public BuscarProductosPorCategoriaQueryHandler(IProductoUseCases productoUseCases, IAppLogger logger)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _productoUseCases = productoUseCases ?? throw new ArgumentNullException(nameof(productoUseCases));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -106,24 +107,24 @@ namespace CarritoComprasAPI.Core.Queries.Productos
         {
             try
             {
-                _logger.LogInformation("Buscando productos por categoría: {Categoria}", query.Categoria);
+                _logger.LogInformation("Query CQRS: Buscando productos por categoría: {Categoria} via UseCases", query.Categoria);
                 
                 if (string.IsNullOrWhiteSpace(query.Categoria))
                 {
-                    _logger.LogWarning("Categoría de búsqueda vacía o nula");
+                    _logger.LogWarning("Query CQRS: Categoría de búsqueda vacía o nula");
                     return Enumerable.Empty<Producto>();
                 }
 
-                var productos = await _repository.BuscarPorCategoriaAsync(query.Categoria);
+                var productos = await _productoUseCases.BuscarPorCategoriaAsync(query.Categoria);
                 
-                _logger.LogInformation("Se encontraron {Count} productos en la categoría {Categoria}", 
+                _logger.LogInformation("Query CQRS: Se encontraron {Count} productos en la categoría {Categoria} via UseCases", 
                     productos.Count(), query.Categoria);
                 
                 return productos;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al buscar productos por categoría: {Categoria}", query.Categoria);
+                _logger.LogError(ex, "Query CQRS: Error al buscar productos por categoría: {Categoria}", query.Categoria);
                 throw;
             }
         }
