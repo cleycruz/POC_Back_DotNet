@@ -1,0 +1,337 @@
+name: 📊 Code Quality & Metrics Analysis
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Ejecutar todos los lunes a las 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+    inputs:
+      complexity_threshold:
+        description: 'Umbral de complejidad ciclomática'
+        required: false
+        default: '10'
+        type: string
+      generate_report:
+        description: 'Generar reporte HTML'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  code-metrics:
+    name: 🔍 Análisis de Métricas de Código
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+      pages: write
+      id-token: write
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Necesario para análisis de SonarQube
+    
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: 📦 Restaurar dependencias
+      run: dotnet restore CarritoCompras.sln
+      working-directory: ./
+    
+    - name: 🏗️ Build proyecto
+      run: dotnet build CarritoCompras.sln --no-restore --configuration Release
+      working-directory: ./
+    
+    - name: 🧪 Ejecutar tests con cobertura
+      run: |
+        dotnet test CarritoCompras.sln \
+          --no-build \
+          --configuration Release \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults \
+          --logger trx \
+          --verbosity minimal
+      working-directory: ./
+    
+    - name: 📊 Instalar ReportGenerator
+      run: dotnet tool install -g dotnet-reportgenerator-globaltool
+    
+    - name: 📈 Generar reporte de cobertura
+      run: |
+        reportgenerator \
+          -reports:"./TestResults/**/coverage.cobertura.xml" \
+          -targetdir:"./coverage-report" \
+          -reporttypes:"Html;JsonSummary;Badges;MarkdownSummaryGithub" \
+          -title:"Carrito Compras - Cobertura de Código"
+      working-directory: ./
+    
+    - name: 📊 Obtener métricas de cobertura
+      id: coverage
+      run: |
+        if [ -f "./coverage-report/Summary.json" ]; then
+          COVERAGE=$(jq -r '.summary.linecoverage' ./coverage-report/Summary.json)
+          BRANCH_COVERAGE=$(jq -r '.summary.branchcoverage' ./coverage-report/Summary.json)
+          echo "line_coverage=$COVERAGE" >> $GITHUB_OUTPUT
+          echo "branch_coverage=$BRANCH_COVERAGE" >> $GITHUB_OUTPUT
+          echo "✅ Cobertura de líneas: $COVERAGE%"
+          echo "✅ Cobertura de ramas: $BRANCH_COVERAGE%"
+        else
+          echo "⚠️ Archivo de resumen de cobertura no encontrado"
+          echo "line_coverage=0" >> $GITHUB_OUTPUT
+          echo "branch_coverage=0" >> $GITHUB_OUTPUT
+        fi
+      working-directory: ./
+    
+    - name: 🔍 Iniciar aplicación para métricas
+      run: |
+        # Iniciar aplicación en background
+        cd backend/src/CarritoComprasAPI
+        dotnet run --no-build --configuration Release --urls http://localhost:5000 &
+        APP_PID=$!
+        echo "APP_PID=$APP_PID" >> $GITHUB_ENV
+        
+        # Esperar que la aplicación inicie
+        echo "⏳ Esperando que la aplicación inicie..."
+        for i in {1..30}; do
+          if curl -s http://localhost:5000/api/metrics/report > /dev/null; then
+            echo "✅ Aplicación iniciada correctamente"
+            break
+          fi
+          if [ $i -eq 30 ]; then
+            echo "❌ Timeout esperando que la aplicación inicie"
+            exit 1
+          fi
+          sleep 2
+        done
+      working-directory: ./
+    
+    - name: 📊 Obtener métricas personalizadas
+      id: custom_metrics
+      run: |
+        mkdir -p ./metrics-output
+        
+        # Obtener reporte completo de métricas
+        curl -s http://localhost:5000/api/metrics/report > ./metrics-output/full-report.json
+        
+        # Obtener complejidad ciclomática
+        curl -s http://localhost:5000/api/metrics/cyclomatic-complexity > ./metrics-output/complexity.json
+        
+        # Obtener deuda técnica
+        curl -s http://localhost:5000/api/metrics/technical-debt > ./metrics-output/technical-debt.json
+        
+        # Obtener resumen ejecutivo
+        curl -s http://localhost:5000/api/metrics/executive-summary > ./metrics-output/executive-summary.json
+        
+        # Extraer métricas clave
+        if [ -f "./metrics-output/complexity.json" ]; then
+          AVG_COMPLEXITY=$(jq -r '.averageComplexity' ./metrics-output/complexity.json)
+          HIGH_COMPLEXITY_COUNT=$(jq -r '.highComplexityMethods | length' ./metrics-output/complexity.json)
+          echo "avg_complexity=$AVG_COMPLEXITY" >> $GITHUB_OUTPUT
+          echo "high_complexity_methods=$HIGH_COMPLEXITY_COUNT" >> $GITHUB_OUTPUT
+          echo "✅ Complejidad promedio: $AVG_COMPLEXITY"
+          echo "✅ Métodos de alta complejidad: $HIGH_COMPLEXITY_COUNT"
+        fi
+        
+        if [ -f "./metrics-output/technical-debt.json" ]; then
+          DEBT_HOURS=$(jq -r '.totalDebtHours' ./metrics-output/technical-debt.json)
+          DEBT_SEVERITY=$(jq -r '.severityLevel' ./metrics-output/technical-debt.json)
+          echo "debt_hours=$DEBT_HOURS" >> $GITHUB_OUTPUT
+          echo "debt_severity=$DEBT_SEVERITY" >> $GITHUB_OUTPUT
+          echo "✅ Deuda técnica: $DEBT_HOURS horas ($DEBT_SEVERITY)"
+        fi
+      working-directory: ./
+    
+    - name: 🛑 Detener aplicación
+      if: always()
+      run: |
+        if [ ! -z "$APP_PID" ]; then
+          kill $APP_PID || true
+          echo "🛑 Aplicación detenida"
+        fi
+      working-directory: ./
+    
+    - name: 🏷️ Generar badges de métricas
+      run: |
+        mkdir -p ./badges
+        
+        # Badge de cobertura
+        COVERAGE="${{ steps.coverage.outputs.line_coverage }}"
+        COLOR="red"
+        if (( $(echo "$COVERAGE >= 80" | bc -l) )); then COLOR="brightgreen"
+        elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then COLOR="yellow"
+        elif (( $(echo "$COVERAGE >= 40" | bc -l) )); then COLOR="orange"
+        fi
+        
+        curl -s "https://img.shields.io/badge/Cobertura-${COVERAGE}%25-${COLOR}" > ./badges/coverage.svg
+        
+        # Badge de complejidad
+        COMPLEXITY="${{ steps.custom_metrics.outputs.avg_complexity }}"
+        COMPLEXITY_COLOR="red"
+        if (( $(echo "$COMPLEXITY <= 5" | bc -l) )); then COMPLEXITY_COLOR="brightgreen"
+        elif (( $(echo "$COMPLEXITY <= 10" | bc -l) )); then COMPLEXITY_COLOR="yellow"
+        elif (( $(echo "$COMPLEXITY <= 15" | bc -l) )); then COMPLEXITY_COLOR="orange"
+        fi
+        
+        curl -s "https://img.shields.io/badge/Complejidad-${COMPLEXITY}-${COMPLEXITY_COLOR}" > ./badges/complexity.svg
+        
+        # Badge de deuda técnica
+        DEBT_SEVERITY="${{ steps.custom_metrics.outputs.debt_severity }}"
+        DEBT_COLOR="red"
+        case $DEBT_SEVERITY in
+          "Baja") DEBT_COLOR="brightgreen" ;;
+          "Moderada") DEBT_COLOR="yellow" ;;
+          "Alta") DEBT_COLOR="orange" ;;
+          "Crítica") DEBT_COLOR="red" ;;
+        esac
+        
+        curl -s "https://img.shields.io/badge/Deuda%20Técnica-${DEBT_SEVERITY}-${DEBT_COLOR}" > ./badges/debt.svg
+      working-directory: ./
+    
+    - name: 📝 Comentar resultados en PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const coverage = '${{ steps.coverage.outputs.line_coverage }}';
+          const branchCoverage = '${{ steps.coverage.outputs.branch_coverage }}';
+          const avgComplexity = '${{ steps.custom_metrics.outputs.avg_complexity }}';
+          const highComplexityMethods = '${{ steps.custom_metrics.outputs.high_complexity_methods }}';
+          const debtHours = '${{ steps.custom_metrics.outputs.debt_hours }}';
+          const debtSeverity = '${{ steps.custom_metrics.outputs.debt_severity }}';
+          
+          const complexityThreshold = '${{ github.event.inputs.complexity_threshold }}' || '10';
+          
+          // Determinar emojis y colores basados en métricas
+          const coverageEmoji = parseFloat(coverage) >= 80 ? '✅' : parseFloat(coverage) >= 60 ? '⚠️' : '❌';
+          const complexityEmoji = parseFloat(avgComplexity) <= 10 ? '✅' : parseFloat(avgComplexity) <= 15 ? '⚠️' : '❌';
+          const debtEmoji = debtSeverity === 'Baja' ? '✅' : debtSeverity === 'Moderada' ? '⚠️' : '❌';
+          
+          const comment = `
+          ## 📊 Reporte de Métricas de Código
+          
+          | Métrica | Valor | Estado |
+          |---------|-------|--------|
+          | **Cobertura de Líneas** | ${coverage}% | ${coverageEmoji} |
+          | **Cobertura de Ramas** | ${branchCoverage}% | ${coverageEmoji} |
+          | **Complejidad Promedio** | ${avgComplexity} | ${complexityEmoji} |
+          | **Métodos Complejos (>${complexityThreshold})** | ${highComplexityMethods} | ${highComplexityMethods == 0 ? '✅' : '⚠️'} |
+          | **Deuda Técnica** | ${debtHours}h (${debtSeverity}) | ${debtEmoji} |
+          
+          ### 🎯 Objetivos de Calidad
+          - **Cobertura objetivo:** ≥80%
+          - **Complejidad objetivo:** ≤10
+          - **Deuda técnica objetivo:** ≤Moderada
+          
+          ### 📈 Recomendaciones
+          ${parseFloat(coverage) < 80 ? '- ⬆️ Aumentar cobertura de tests\n' : ''}
+          ${parseFloat(avgComplexity) > 10 ? '- 🔧 Refactorizar métodos complejos\n' : ''}
+          ${parseInt(highComplexityMethods) > 0 ? `- ⚠️ Revisar ${highComplexityMethods} métodos con alta complejidad\n` : ''}
+          ${debtSeverity !== 'Baja' ? '- 💳 Reducir deuda técnica\n' : ''}
+          
+          <details>
+          <summary>🔍 Ver reportes detallados</summary>
+          
+          - [📊 Reporte de Cobertura](../coverage-report/index.html)
+          - [📈 Análisis de Complejidad](../metrics-output/complexity.json)
+          - [💳 Deuda Técnica](../metrics-output/technical-debt.json)
+          
+          </details>
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+    
+    - name: 📤 Subir artefactos
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: code-metrics-report-${{ github.run_number }}
+        path: |
+          ./coverage-report/
+          ./metrics-output/
+          ./badges/
+          ./TestResults/
+        retention-days: 30
+    
+    - name: 📊 Setup Pages (solo en main)
+      if: github.ref == 'refs/heads/main'
+      uses: actions/configure-pages@v4
+    
+    - name: 🌐 Deploy a GitHub Pages (solo en main)
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: './coverage-report'
+    
+    - name: 🚀 Publicar Pages (solo en main)
+      if: github.ref == 'refs/heads/main'
+      id: deployment
+      uses: actions/deploy-pages@v4
+    
+    - name: ❌ Fallar si métricas críticas
+      run: |
+        echo "🔍 Evaluando métricas críticas..."
+        
+        COVERAGE="${{ steps.coverage.outputs.line_coverage }}"
+        COMPLEXITY="${{ steps.custom_metrics.outputs.avg_complexity }}"
+        HIGH_COMPLEXITY="${{ steps.custom_metrics.outputs.high_complexity_methods }}"
+        DEBT_SEVERITY="${{ steps.custom_metrics.outputs.debt_severity }}"
+        
+        FAIL=false
+        
+        # Verificar cobertura mínima (40%)
+        if (( $(echo "$COVERAGE < 40" | bc -l) )); then
+          echo "❌ FALLO: Cobertura de código muy baja ($COVERAGE% < 40%)"
+          FAIL=true
+        fi
+        
+        # Verificar complejidad máxima (20)
+        if (( $(echo "$COMPLEXITY > 20" | bc -l) )); then
+          echo "❌ FALLO: Complejidad promedio muy alta ($COMPLEXITY > 20)"
+          FAIL=true
+        fi
+        
+        # Verificar métodos de alta complejidad (máximo 5)
+        if [ "$HIGH_COMPLEXITY" -gt 5 ]; then
+          echo "❌ FALLO: Demasiados métodos de alta complejidad ($HIGH_COMPLEXITY > 5)"
+          FAIL=true
+        fi
+        
+        # Verificar deuda técnica crítica
+        if [ "$DEBT_SEVERITY" = "Crítica" ]; then
+          echo "❌ FALLO: Deuda técnica crítica detectada"
+          FAIL=true
+        fi
+        
+        if [ "$FAIL" = true ]; then
+          echo "💥 El build falla debido a métricas críticas de calidad"
+          exit 1
+        else
+          echo "✅ Todas las métricas críticas están dentro de los umbrales aceptables"
+        fi
+      working-directory: ./
+    
+    - name: 🎉 Resumen final
+      if: always()
+      run: |
+        echo "🎯 === RESUMEN DE MÉTRICAS ==="
+        echo "📊 Cobertura: ${{ steps.coverage.outputs.line_coverage }}%"
+        echo "🔄 Complejidad promedio: ${{ steps.custom_metrics.outputs.avg_complexity }}"
+        echo "⚠️ Métodos complejos: ${{ steps.custom_metrics.outputs.high_complexity_methods }}"
+        echo "💳 Deuda técnica: ${{ steps.custom_metrics.outputs.debt_hours }}h (${{ steps.custom_metrics.outputs.debt_severity }})"
+        echo "================================"
+      working-directory: ./

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Configuración de SonarQube para análisis de calidad de código -->
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <!-- Configuración general del proyecto -->
+  <PropertyGroup>
+    <SonarQubeProjectKey>carrito-compras-api</SonarQubeProjectKey>
+    <SonarQubeProjectName>Carrito de Compras API</SonarQubeProjectName>
+    <SonarQubeProjectVersion>1.0</SonarQubeProjectVersion>
+    
+    <!-- Configuración de cobertura -->
+    <SonarQubeTestProject>false</SonarQubeTestProject>
+    <SonarQubeCoverageReportPaths>./TestResults/**/coverage.cobertura.xml</SonarQubeCoverageReportPaths>
+    
+    <!-- Configuración de análisis -->
+    <SonarQubeLanguage>cs</SonarQubeLanguage>
+    <SonarQubeSourceEncoding>UTF-8</SonarQubeSourceEncoding>
+    
+    <!-- Umbrales de calidad -->
+    <SonarQubeCyclomaticComplexityThreshold>10</SonarQubeCyclomaticComplexityThreshold>
+    <SonarQubeCognitiveComplexityThreshold>15</SonarQubeCognitiveComplexityThreshold>
+    <SonarQubeLinesOfCodeThreshold>20</SonarQubeLinesOfCodeThreshold>
+    
+    <!-- Configuración de duplicación -->
+    <SonarQubeDuplicatedLinesThreshold>3.0</SonarQubeDuplicatedLinesThreshold>
+    <SonarQubeDuplicatedBlocksThreshold>10</SonarQubeDuplicatedBlocksThreshold>
+  </PropertyGroup>
+  
+  <!-- Configuración de reglas específicas -->
+  <PropertyGroup>
+    <!-- Reglas de complejidad -->
+    <SonarQubeRuleComplexity>true</SonarQubeRuleComplexity>
+    <SonarQubeRuleCognitiveComplexity>true</SonarQubeRuleCognitiveComplexity>
+    
+    <!-- Reglas de mantenibilidad -->
+    <SonarQubeRuleMaintainability>true</SonarQubeRuleMaintainability>
+    <SonarQubeRuleCodeSmells>true</SonarQubeRuleCodeSmells>
+    
+    <!-- Reglas de confiabilidad -->
+    <SonarQubeRuleReliability>true</SonarQubeRuleReliability>
+    <SonarQubeRuleBugs>true</SonarQubeRuleBugs>
+    
+    <!-- Reglas de seguridad -->
+    <SonarQubeRuleSecurity>true</SonarQubeRuleSecurity>
+    <SonarQubeRuleVulnerabilities>true</SonarQubeRuleVulnerabilities>
+    <SonarQubeRuleSecurityHotspots>true</SonarQubeRuleSecurityHotspots>
+  </PropertyGroup>
+  
+  <!-- Exclusiones -->
+  <PropertyGroup>
+    <!-- Excluir archivos generados automáticamente -->
+    <SonarQubeExcludePatterns>
+      **/obj/**,
+      **/bin/**,
+      **/*.Generated.cs,
+      **/AssemblyInfo.cs,
+      **/GlobalAssemblyInfo.cs,
+      **/*.Designer.cs,
+      **/Migrations/**
+    </SonarQubeExcludePatterns>
+    
+    <!-- Excluir archivos de prueba del análisis de duplicación -->
+    <SonarQubeDuplicationExclusions>
+      **/*Tests.cs,
+      **/*Test.cs,
+      **/Tests/**,
+      **/TestUtilities/**
+    </SonarQubeDuplicationExclusions>
+    
+    <!-- Excluir archivos de prueba del análisis de cobertura -->
+    <SonarQubeCoverageExclusions>
+      **/*Tests.cs,
+      **/*Test.cs,
+      **/Tests/**,
+      **/TestUtilities/**,
+      **/Program.cs
+    </SonarQubeCoverageExclusions>
+  </PropertyGroup>
+  
+  <!-- Configuración de reglas específicas C# -->
+  <PropertyGroup>
+    <!-- Configurar umbrales para métodos -->
+    <SonarQubeParameterMax>7</SonarQubeParameterMax>
+    <SonarQubeMethodLinesMax>50</SonarQubeMethodLinesMax>
+    <SonarQubeClassLinesMax>200</SonarQubeClassLinesMax>
+    
+    <!-- Configurar umbrales para archivos -->
+    <SonarQubeFileLinesMax>1000</SonarQubeFileLinesMax>
+    
+    <!-- Configurar reglas de naming -->
+    <SonarQubeNamingConventions>true</SonarQubeNamingConventions>
+    
+    <!-- Configurar reglas de documentación -->
+    <SonarQubeDocumentationRequired>false</SonarQubeDocumentationRequired>
+  </PropertyGroup>
+  
+</Project>
