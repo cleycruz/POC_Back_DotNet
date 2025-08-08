@@ -8,7 +8,8 @@ import {
   CrearProductoDto, 
   ActualizarProductoDto, 
   AgregarItemCarritoDto, 
-  ActualizarItemCarritoDto 
+  ActualizarCantidadDto,
+  CarritoItemDto
 } from '../models/carrito.models';
 
 @Injectable({
@@ -36,65 +37,70 @@ export class CarritoService {
 
   // Productos
   getProductos(): Observable<ProductoDto[]> {
-    return this.http.get<ProductoDto[]>(`${this.baseUrl}/Productos`);
+    return this.http.get<ProductoDto[]>(`${this.baseUrl}/productos`);
   }
 
   getProducto(id: number): Observable<ProductoDto> {
-    return this.http.get<ProductoDto>(`${this.baseUrl}/Productos/${id}`);
+    return this.http.get<ProductoDto>(`${this.baseUrl}/productos/${id}`);
   }
 
   getProductosByCategoria(categoria: string): Observable<ProductoDto[]> {
-    return this.http.get<ProductoDto[]>(`${this.baseUrl}/Productos/categoria/${categoria}`);
+    return this.http.get<ProductoDto[]>(`${this.baseUrl}/productos/categoria/${categoria}`);
   }
 
   createProducto(producto: CrearProductoDto): Observable<ProductoDto> {
-    return this.http.post<ProductoDto>(`${this.baseUrl}/Productos`, producto, this.httpOptions);
+    return this.http.post<ProductoDto>(`${this.baseUrl}/productos`, producto, this.httpOptions);
   }
 
   updateProducto(id: number, producto: ActualizarProductoDto): Observable<ProductoDto> {
-    return this.http.put<ProductoDto>(`${this.baseUrl}/Productos/${id}`, producto, this.httpOptions);
+    return this.http.put<ProductoDto>(`${this.baseUrl}/productos/${id}`, producto, this.httpOptions);
   }
 
   deleteProducto(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/Productos/${id}`);
+    return this.http.delete<void>(`${this.baseUrl}/productos/${id}`);
   }
 
   // Carrito
   getCarrito(usuarioId: string): Observable<CarritoDto> {
-    return this.http.get<CarritoDto>(`${this.baseUrl}/Carrito/${usuarioId}`).pipe(
+    return this.http.get<CarritoDto>(`${this.baseUrl}/carrito/${usuarioId}`).pipe(
       tap(carrito => this.updateCarritoSubject(carrito))
-    );
-  }
-
-  addToCarrito(usuarioId: string, request: AgregarItemCarritoDto): Observable<CarritoDto> {
-    return this.http.post<CarritoDto>(`${this.baseUrl}/Carrito/${usuarioId}/items`, request, this.httpOptions).pipe(
-      tap(carrito => this.updateCarritoSubject(carrito))
-    );
-  }
-
-  updateCarritoItem(usuarioId: string, itemId: number, request: ActualizarItemCarritoDto): Observable<CarritoDto> {
-    return this.http.put<CarritoDto>(`${this.baseUrl}/Carrito/${usuarioId}/items/${itemId}`, request, this.httpOptions).pipe(
-      tap(carrito => this.updateCarritoSubject(carrito))
-    );
-  }
-
-  removeFromCarrito(usuarioId: string, itemId: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/Carrito/${usuarioId}/items/${itemId}`).pipe(
-      tap(() => {
-        // Después de eliminar, recargar el carrito
-        this.getCarrito(usuarioId).subscribe();
-      })
-    );
-  }
-
-  clearCarrito(usuarioId: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/Carrito/${usuarioId}`).pipe(
-      tap(() => this.updateCarritoSubject(null))
     );
   }
 
   getCarritoTotal(usuarioId: string): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/Carrito/${usuarioId}/total`);
+    return this.http.get<number>(`${this.baseUrl}/carrito/${usuarioId}/total`);
+  }
+
+  getCarritoResumen(usuarioId: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/carrito/${usuarioId}/resumen`);
+  }
+
+  getCarritoItems(usuarioId: string): Observable<CarritoItemDto[]> {
+    return this.http.get<CarritoItemDto[]>(`${this.baseUrl}/carrito/${usuarioId}/items`);
+  }
+
+  addToCarrito(usuarioId: string, request: AgregarItemCarritoDto): Observable<CarritoDto> {
+    return this.http.post<CarritoDto>(`${this.baseUrl}/carrito/${usuarioId}/items`, request, this.httpOptions).pipe(
+      tap(carrito => this.updateCarritoSubject(carrito))
+    );
+  }
+
+  updateCarritoItem(usuarioId: string, productoId: number, request: ActualizarCantidadDto): Observable<CarritoDto> {
+    return this.http.put<CarritoDto>(`${this.baseUrl}/carrito/${usuarioId}/items/${productoId}`, request, this.httpOptions).pipe(
+      tap(carrito => this.updateCarritoSubject(carrito))
+    );
+  }
+
+  removeFromCarrito(usuarioId: string, productoId: number): Observable<CarritoDto> {
+    return this.http.delete<CarritoDto>(`${this.baseUrl}/carrito/${usuarioId}/items/${productoId}`).pipe(
+      tap(carrito => this.updateCarritoSubject(carrito))
+    );
+  }
+
+  clearCarrito(usuarioId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/carrito/${usuarioId}`).pipe(
+      tap(() => this.updateCarritoSubject(null))
+    );
   }
 
   // Método para simular usuario actual (en una app real esto vendría de autenticación)

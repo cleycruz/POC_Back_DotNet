@@ -44,7 +44,7 @@ export class CarritoComponent implements OnInit {
     }
 
     const usuarioId = this.carritoService.getCurrentUserId();
-    this.carritoService.updateCarritoItem(usuarioId, item.id, {
+    this.carritoService.updateCarritoItem(usuarioId, item.productoId, {
       cantidad: newQuantity
     }).subscribe({
       next: (updatedCarrito: CarritoDto) => {
@@ -60,15 +60,15 @@ export class CarritoComponent implements OnInit {
   removeItem(item: CarritoItemDto): void {
     this.dialogService.confirm(
       'Eliminar producto',
-      `¿Estás seguro de que quieres eliminar "${item.nombreProducto}" del carrito?`,
+      `¿Estás seguro de que quieres eliminar "${item.productoNombre}" del carrito?`,
       'Eliminar',
       'Cancelar'
     ).subscribe(confirmed => {
       if (confirmed) {
         const usuarioId = this.carritoService.getCurrentUserId();
-        this.carritoService.removeFromCarrito(usuarioId, item.id).subscribe({
-          next: () => {
-            this.loadCarrito(); // Recargar el carrito después de eliminar
+        this.carritoService.removeFromCarrito(usuarioId, item.productoId).subscribe({
+          next: (updatedCarrito: CarritoDto) => {
+            this.carrito = updatedCarrito;
           },
           error: (error: any) => {
             console.error('Error al eliminar item:', error);

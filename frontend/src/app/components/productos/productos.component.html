@@ -98,14 +98,17 @@
         <h3>{{ producto.nombre }}</h3>
         <p class="description">{{ producto.descripcion }}</p>
         <p class="stock">{{ producto.stock }} unidades disponibles</p>
-        <div class="category">{{ producto.categoria }}</div>
+        <div class="availability" [class.available]="producto.estaDisponible" [class.unavailable]="!producto.estaDisponible">
+          {{ producto.estaDisponible ? '✅ Disponible' : '❌ No Disponible' }}
+        </div>
+        <div class="category">{{ producto.categoria || 'Sin categoría' }}</div>
       </div>
       
       <div class="product-actions">
         <button class="btn btn-success" 
                 (click)="addToCart(producto)" 
-                [disabled]="producto.stock === 0">
-          {{ producto.stock === 0 ? '🚫 Sin Stock' : '🛒 Agregar al Carrito' }}
+                [disabled]="producto.stock === 0 || !producto.estaDisponible">
+          {{ producto.stock === 0 ? '🚫 Sin Stock' : !producto.estaDisponible ? '🚫 No Disponible' : '🛒 Agregar al Carrito' }}
         </button>
         <button class="btn btn-info" (click)="editProduct(producto)">
           ✏️ Editar

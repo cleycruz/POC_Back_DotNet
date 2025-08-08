@@ -1,17 +1,20 @@
-// Modelos basados en la API OpenAPI
+// Modelos basados en la API OpenAPI actualizada
 export interface ProductoDto {
   id: number;
   nombre: string;
-  descripcion: string;
+  descripcion?: string;
   precio: number;
   stock: number;
-  categoria: string;
+  estaDisponible: boolean;
+  fechaCreacion: string;
+  fechaActualizacion?: string;
+  categoria?: string;
 }
 
 export interface CarritoItemDto {
   id: number;
   productoId: number;
-  nombreProducto: string;
+  productoNombre: string;
   cantidad: number;
   precioUnitario: number;
   subtotal: number;
@@ -22,6 +25,8 @@ export interface CarritoDto {
   usuarioId: string;
   items: CarritoItemDto[];
   total: number;
+  cantidadItems: number;
+  cantidadProductos: number;
   fechaCreacion: string;
   fechaActualizacion: string;
 }
@@ -47,8 +52,27 @@ export interface AgregarItemCarritoDto {
   cantidad: number;
 }
 
-export interface ActualizarItemCarritoDto {
+export interface ActualizarCantidadDto {
   cantidad: number;
+}
+
+// Nuevos modelos para funcionalidades adicionales
+export interface CarritoItem {
+  id: number;
+  productoId: number;
+  producto: ProductoDto;
+  cantidadItem: number;
+  precioUnitario: number;
+  subtotal: number;
+  fechaAgregado: string;
+}
+
+export interface CarritoResumen {
+  usuarioId: string;
+  totalItems: number;
+  totalProductos: number;
+  total: number;
+  fechaUltimaActualizacion: string;
 }
 
 // Aliases para compatibilidad
@@ -58,4 +82,4 @@ export type Carrito = CarritoDto;
 export type CreateProductoRequest = CrearProductoDto;
 export type UpdateProductoRequest = ActualizarProductoDto;
 export type AddToCarritoRequest = AgregarItemCarritoDto;
-export type UpdateCarritoItemRequest = ActualizarItemCarritoDto;
+export type UpdateCarritoItemRequest = ActualizarCantidadDto;

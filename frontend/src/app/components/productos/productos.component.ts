@@ -77,7 +77,13 @@ export class ProductosComponent implements OnInit {
 
   editProduct(producto: ProductoDto): void {
     this.editingProduct = producto;
-    this.newProduct = { ...producto };
+    this.newProduct = { 
+      nombre: producto.nombre,
+      descripcion: producto.descripcion,
+      precio: producto.precio,
+      stock: producto.stock,
+      categoria: producto.categoria || ''
+    };
     this.showForm = true;
   }
 
