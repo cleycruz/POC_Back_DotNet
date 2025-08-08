@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="CarritoCompras Code Analysis Rules" Description="Custom ruleset for CarritoCompras API" ToolsVersion="16.0">
+  <Rules AnalyzerId="Microsoft.CodeQuality.Analyzers" RuleNamespace="Microsoft.CodeQuality.Analyzers">
+    <!-- Code Quality Rules -->
+    <Rule Id="CA1001" Action="Warning" />  <!-- Types that own disposable fields should be disposable -->
+    <Rule Id="CA1002" Action="Warning" />  <!-- Do not expose generic lists -->
+    <Rule Id="CA1003" Action="Warning" />  <!-- Use generic event handler instances -->
+    <Rule Id="CA1008" Action="Warning" />  <!-- Enums should have zero value -->
+    <Rule Id="CA1010" Action="Warning" />  <!-- Collections should implement generic interface -->
+    <Rule Id="CA1012" Action="Warning" />  <!-- Abstract types should not have constructors -->
+    <Rule Id="CA1014" Action="Warning" />  <!-- Mark assemblies with CLSCompliant -->
+    <Rule Id="CA1016" Action="Warning" />  <!-- Mark assemblies with assembly version -->
+    <Rule Id="CA1017" Action="Warning" />  <!-- Mark assemblies with ComVisible -->
+    <Rule Id="CA1018" Action="Warning" />  <!-- Mark attributes with AttributeUsageAttribute -->
+  </Rules>
+  
+  <Rules AnalyzerId="Microsoft.CodeQuality.CSharp.Analyzers" RuleNamespace="Microsoft.CodeQuality.CSharp.Analyzers">
+    <!-- C# Specific Quality Rules -->
+    <Rule Id="CA1001" Action="Warning" />
+    <Rule Id="CA1009" Action="Warning" />  <!-- Declare event handlers correctly -->
+    <Rule Id="CA1016" Action="Warning" />  <!-- Mark assemblies with assembly version -->
+    <Rule Id="CA1033" Action="Warning" />  <!-- Interface methods should be callable by child types -->
+  </Rules>
+  
+  <Rules AnalyzerId="Microsoft.NetCore.Analyzers" RuleNamespace="Microsoft.NetCore.Analyzers">
+    <!-- .NET Core Specific Rules -->
+    <Rule Id="CA1303" Action="Warning" />  <!-- Do not pass literals as localized parameters -->
+    <Rule Id="CA1304" Action="Warning" />  <!-- Specify CultureInfo -->
+    <Rule Id="CA1305" Action="Warning" />  <!-- Specify IFormatProvider -->
+    <Rule Id="CA1307" Action="Warning" />  <!-- Specify StringComparison -->
+    <Rule Id="CA1308" Action="Warning" />  <!-- Normalize strings to uppercase -->
+    <Rule Id="CA1309" Action="Warning" />  <!-- Use ordinal stringcomparison -->
+  </Rules>
+  
+  <Rules AnalyzerId="Microsoft.NetFramework.Analyzers" RuleNamespace="Microsoft.NetFramework.Analyzers">
+    <!-- .NET Framework Specific Rules -->
+    <Rule Id="CA1058" Action="Warning" />  <!-- Types should not extend certain base types -->
+    <Rule Id="CA2153" Action="Warning" />  <!-- Do Not Catch Corrupted State Exceptions -->
+  </Rules>
+</RuleSet>

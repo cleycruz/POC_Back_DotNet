@@ -441,8 +441,17 @@ docker-compose.override.yml
 *.pem
 *.p12
 *.p8
-appsettings.Production.json
-appsettings.Staging.json
+
+# ASP.NET Core Configuration Files
+# Allow base configuration files for deployment (with tokens)
+!**/appsettings.json
+!**/appsettings.Development.json
+!**/appsettings.Staging.json
+!**/appsettings.Test.json
+# Block production secrets (should use environment variables)
+**/appsettings.Production.json
+
+# Secrets and sensitive files
 secrets.json
 .secrets/
 

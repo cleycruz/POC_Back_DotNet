@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Dashboard de Métricas - Carrito Compras</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e1e8ed;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .last-update {
+            color: #95a5a6;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 5px solid #3498db;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .metric-card.success {
+            border-left-color: #27ae60;
+        }
+
+        .metric-card.warning {
+            border-left-color: #f39c12;
+        }
+
+        .metric-card.error {
+            border-left-color: #e74c3c;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            transform: rotate(45deg) translate(20px, -20px);
+        }
+
+        .metric-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .metric-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .metric-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .metric-description {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .metric-trend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .trend-up {
+            color: #27ae60;
+        }
+
+        .trend-down {
+            color: #e74c3c;
+        }
+
+        .trend-stable {
+            color: #95a5a6;
+        }
+
+        .detailed-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .detailed-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .detailed-card h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+
+        .progress-bar {
+            background: #ecf0f1;
+            border-radius: 10px;
+            height: 20px;
+            margin: 10px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 1s ease-in-out;
+            position: relative;
+        }
+
+        .progress-fill.success {
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+        }
+
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #f39c12, #f1c40f);
+        }
+
+        .progress-fill.error {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            margin: 0 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #764ba2, #667eea);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        }
+
+        .btn.secondary:hover {
+            background: linear-gradient(45deg, #7f8c8d, #95a5a6);
+        }
+
+        .complexity-chart {
+            margin-top: 20px;
+        }
+
+        .complexity-bar {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        .complexity-label {
+            width: 120px;
+            color: #7f8c8d;
+        }
+
+        .complexity-progress {
+            flex: 1;
+            height: 12px;
+            background: #ecf0f1;
+            border-radius: 6px;
+            margin: 0 15px;
+            overflow: hidden;
+        }
+
+        .complexity-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 1s ease-in-out;
+        }
+
+        .recommendations {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            border-left: 5px solid #f39c12;
+        }
+
+        .recommendations h3 {
+            color: #e17055;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .recommendations h3::before {
+            content: '💡';
+            margin-right: 10px;
+            font-size: 1.5rem;
+        }
+
+        .recommendations ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .recommendations li {
+            padding: 8px 0;
+            color: #6c5ce7;
+            font-weight: 500;
+        }
+
+        .recommendations li::before {
+            content: '▶';
+            margin-right: 10px;
+            color: #e17055;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            .detailed-metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .metric-value {
+                font-size: 2rem;
+            }
+        }
+
+        .refresh-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .refresh-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Dashboard de Métricas de Código</h1>
+            <p class="subtitle">Carrito de Compras API - Análisis de Calidad y Complejidad</p>
+            <p class="last-update">Última actualización: <span id="lastUpdate">Cargando...</span></p>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Cargando métricas...</p>
+        </div>
+
+        <div class="metrics-grid" id="metricsGrid" style="display: none;">
+            <!-- Métricas principales -->
+            <div class="metric-card" id="coverageCard">
+                <div class="metric-header">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-title">Cobertura de Código</div>
+                </div>
+                <div class="metric-value" id="coverageValue">--%</div>
+                <div class="metric-description">Porcentaje de líneas cubiertas por tests</div>
+                <div class="metric-trend" id="coverageTrend">
+                    <span class="trend-stable">📈 Estable</span>
+                </div>
+            </div>
+
+            <div class="metric-card" id="complexityCard">
+                <div class="metric-header">
+                    <div class="metric-icon">🔄</div>
+                    <div class="metric-title">Complejidad Ciclomática</div>
+                </div>
+                <div class="metric-value" id="complexityValue">--</div>
+                <div class="metric-description">Complejidad promedio de métodos</div>
+                <div class="metric-trend" id="complexityTrend">
+                    <span class="trend-stable">📈 Estable</span>
+                </div>
+            </div>
+
+            <div class="metric-card" id="debtCard">
+                <div class="metric-header">
+                    <div class="metric-icon">💳</div>
+                    <div class="metric-title">Deuda Técnica</div>
+                </div>
+                <div class="metric-value" id="debtValue">--h</div>
+                <div class="metric-description">Tiempo estimado para resolver</div>
+                <div class="metric-trend" id="debtTrend">
+                    <span class="trend-stable">📈 Estable</span>
+                </div>
+            </div>
+
+            <div class="metric-card" id="maintainabilityCard">
+                <div class="metric-header">
+                    <div class="metric-icon">🔧</div>
+                    <div class="metric-title">Índice de Mantenibilidad</div>
+                </div>
+                <div class="metric-value" id="maintainabilityValue">--</div>
+                <div class="metric-description">Facilidad de mantenimiento (0-100)</div>
+                <div class="metric-trend" id="maintainabilityTrend">
+                    <span class="trend-stable">📈 Estable</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detailed-metrics" id="detailedMetrics" style="display: none;">
+            <div class="detailed-card">
+                <h3>🎯 Distribución de Cobertura</h3>
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Cobertura de Líneas</span>
+                        <span id="lineCoveragePercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="lineCoverageBar" style="width: 0%;">
+                            <div class="progress-text" id="lineCoverageText">0%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Cobertura de Ramas</span>
+                        <span id="branchCoveragePercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="branchCoverageBar" style="width: 0%;">
+                            <div class="progress-text" id="branchCoverageText">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Cobertura de Métodos</span>
+                        <span id="methodCoveragePercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="methodCoverageBar" style="width: 0%;">
+                            <div class="progress-text" id="methodCoverageText">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detailed-card">
+                <h3>🔄 Distribución de Complejidad</h3>
+                <div class="complexity-chart" id="complexityChart">
+                    <!-- Se generará dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <div class="recommendations" id="recommendations" style="display: none;">
+            <h3>Recomendaciones de Mejora</h3>
+            <ul id="recommendationsList">
+                <!-- Se generará dinámicamente -->
+            </ul>
+        </div>
+
+        <div class="actions" id="actions" style="display: none;">
+            <a href="#" class="btn" onclick="refreshMetrics()">🔄 Actualizar Métricas</a>
+            <a href="/api/metrics/export" class="btn secondary" target="_blank">📥 Exportar Datos</a>
+            <a href="/swagger" class="btn secondary" target="_blank">📚 Ver API</a>
+        </div>
+    </div>
+
+    <button class="refresh-button" onclick="refreshMetrics()" title="Actualizar métricas">
+        🔄
+    </button>
+
+    <script>
+        let metricsData = {};
+
+        async function loadMetrics() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('metricsGrid').style.display = 'none';
+            document.getElementById('detailedMetrics').style.display = 'none';
+            document.getElementById('recommendations').style.display = 'none';
+            document.getElementById('actions').style.display = 'none';
+
+            try {
+                // Cargar métricas básicas
+                const [reportResponse, coverageResponse, debtResponse] = await Promise.all([
+                    fetch('/api/metrics/report'),
+                    fetch('/api/metrics/code-coverage'),
+                    fetch('/api/metrics/technical-debt')
+                ]);
+
+                if (!reportResponse.ok || !coverageResponse.ok || !debtResponse.ok) {
+                    throw new Error('Error al cargar métricas');
+                }
+
+                const report = await reportResponse.json();
+                const coverage = await coverageResponse.json();
+                const debt = await debtResponse.json();
+
+                metricsData = { report, coverage, debt };
+
+                updateDashboard();
+                
+            } catch (error) {
+                console.error('Error cargando métricas:', error);
+                showError('Error al cargar las métricas. Verifique que la API esté ejecutándose.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function updateDashboard() {
+            const { report, coverage, debt } = metricsData;
+
+            // Actualizar última actualización
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('es-ES');
+
+            // Actualizar métricas principales
+            updateCoverageMetric(coverage);
+            updateComplexityMetric(report.cyclomaticComplexity);
+            updateDebtMetric(debt);
+            updateMaintainabilityMetric(report.maintainabilityMetrics);
+
+            // Actualizar métricas detalladas
+            updateDetailedCoverage(coverage);
+            updateComplexityChart(report.cyclomaticComplexity);
+
+            // Generar recomendaciones
+            generateRecommendations();
+
+            // Mostrar elementos
+            document.getElementById('metricsGrid').style.display = 'grid';
+            document.getElementById('detailedMetrics').style.display = 'grid';
+            document.getElementById('recommendations').style.display = 'block';
+            document.getElementById('actions').style.display = 'block';
+        }
+
+        function updateCoverageMetric(coverage) {
+            const value = Math.round(coverage.lineCoverage * 10) / 10;
+            const card = document.getElementById('coverageCard');
+            
+            document.getElementById('coverageValue').textContent = `${value}%`;
+            
+            if (value >= 80) {
+                card.className = 'metric-card success';
+                document.getElementById('coverageTrend').innerHTML = '<span class="trend-up">📈 Excelente</span>';
+            } else if (value >= 60) {
+                card.className = 'metric-card warning';
+                document.getElementById('coverageTrend').innerHTML = '<span class="trend-stable">📊 Aceptable</span>';
+            } else {
+                card.className = 'metric-card error';
+                document.getElementById('coverageTrend').innerHTML = '<span class="trend-down">📉 Necesita mejora</span>';
+            }
+        }
+
+        function updateComplexityMetric(complexity) {
+            const value = Math.round(complexity.averageComplexity * 10) / 10;
+            const card = document.getElementById('complexityCard');
+            
+            document.getElementById('complexityValue').textContent = value;
+            
+            if (value <= 5) {
+                card.className = 'metric-card success';
+                document.getElementById('complexityTrend').innerHTML = '<span class="trend-up">📈 Excelente</span>';
+            } else if (value <= 10) {
+                card.className = 'metric-card warning';
+                document.getElementById('complexityTrend').innerHTML = '<span class="trend-stable">📊 Aceptable</span>';
+            } else {
+                card.className = 'metric-card error';
+                document.getElementById('complexityTrend').innerHTML = '<span class="trend-down">📉 Alto riesgo</span>';
+            }
+        }
+
+        function updateDebtMetric(debt) {
+            const value = Math.round(debt.totalDebtHours * 10) / 10;
+            const card = document.getElementById('debtCard');
+            
+            document.getElementById('debtValue').textContent = `${value}h`;
+            
+            if (debt.severityLevel === 'Baja') {
+                card.className = 'metric-card success';
+                document.getElementById('debtTrend').innerHTML = '<span class="trend-up">📈 Controlada</span>';
+            } else if (debt.severityLevel === 'Moderada') {
+                card.className = 'metric-card warning';
+                document.getElementById('debtTrend').innerHTML = '<span class="trend-stable">📊 Monitoreando</span>';
+            } else {
+                card.className = 'metric-card error';
+                document.getElementById('debtTrend').innerHTML = '<span class="trend-down">📉 Requiere atención</span>';
+            }
+        }
+
+        function updateMaintainabilityMetric(maintainability) {
+            const value = Math.round(maintainability.maintainabilityIndex);
+            const card = document.getElementById('maintainabilityCard');
+            
+            document.getElementById('maintainabilityValue').textContent = value;
+            
+            if (value >= 80) {
+                card.className = 'metric-card success';
+                document.getElementById('maintainabilityTrend').innerHTML = '<span class="trend-up">📈 Excelente</span>';
+            } else if (value >= 60) {
+                card.className = 'metric-card warning';
+                document.getElementById('maintainabilityTrend').innerHTML = '<span class="trend-stable">📊 Bueno</span>';
+            } else {
+                card.className = 'metric-card error';
+                document.getElementById('maintainabilityTrend').innerHTML = '<span class="trend-down">📉 Necesita refactoring</span>';
+            }
+        }
+
+        function updateDetailedCoverage(coverage) {
+            const lineCoverage = Math.round(coverage.lineCoverage * 10) / 10;
+            const branchCoverage = Math.round(coverage.branchCoverage * 10) / 10;
+            const methodCoverage = Math.round(coverage.methodCoverage * 10) / 10;
+
+            updateProgressBar('lineCoverage', lineCoverage);
+            updateProgressBar('branchCoverage', branchCoverage);
+            updateProgressBar('methodCoverage', methodCoverage);
+        }
+
+        function updateProgressBar(prefix, value) {
+            const bar = document.getElementById(`${prefix}Bar`);
+            const text = document.getElementById(`${prefix}Text`);
+            const percent = document.getElementById(`${prefix}Percent`);
+            
+            bar.style.width = `${value}%`;
+            text.textContent = `${value}%`;
+            percent.textContent = `${value}%`;
+            
+            if (value >= 80) {
+                bar.className = 'progress-fill success';
+            } else if (value >= 60) {
+                bar.className = 'progress-fill warning';
+            } else {
+                bar.className = 'progress-fill error';
+            }
+        }
+
+        function updateComplexityChart(complexity) {
+            const chart = document.getElementById('complexityChart');
+            const distribution = complexity.complexityDistribution;
+            
+            chart.innerHTML = '';
+            
+            Object.entries(distribution).forEach(([level, count]) => {
+                const total = Object.values(distribution).reduce((a, b) => a + b, 0);
+                const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+                
+                const bar = document.createElement('div');
+                bar.className = 'complexity-bar';
+                
+                bar.innerHTML = `
+                    <div class="complexity-label">${level}</div>
+                    <div class="complexity-progress">
+                        <div class="complexity-fill" style="width: ${percentage}%; background: ${getComplexityColor(level)};"></div>
+                    </div>
+                    <div style="width: 60px; text-align: right;">${count} (${percentage}%)</div>
+                `;
+                
+                chart.appendChild(bar);
+            });
+        }
+
+        function getComplexityColor(level) {
+            if (level.includes('Baja')) return '#27ae60';
+            if (level.includes('Moderada')) return '#f39c12';
+            if (level.includes('Alta')) return '#e74c3c';
+            return '#95a5a6';
+        }
+
+        function generateRecommendations() {
+            const { report, coverage, debt } = metricsData;
+            const recommendations = [];
+            
+            if (coverage.lineCoverage < 80) {
+                recommendations.push(`Aumentar cobertura de tests del ${Math.round(coverage.lineCoverage)}% al 80%`);
+            }
+            
+            if (report.cyclomaticComplexity.averageComplexity > 10) {
+                recommendations.push(`Refactorizar métodos con complejidad alta (${report.cyclomaticComplexity.highComplexityMethods.length} métodos)`);
+            }
+            
+            if (debt.severityLevel !== 'Baja') {
+                recommendations.push(`Reducir deuda técnica de ${debt.severityLevel} a Baja (${Math.round(debt.totalDebtHours)}h pendientes)`);
+            }
+            
+            if (report.maintainabilityMetrics.maintainabilityIndex < 70) {
+                recommendations.push('Mejorar índice de mantenibilidad mediante refactoring');
+            }
+            
+            if (recommendations.length === 0) {
+                recommendations.push('¡Excelente! Todas las métricas están en niveles óptimos');
+            }
+            
+            const list = document.getElementById('recommendationsList');
+            list.innerHTML = recommendations.map(rec => `<li>${rec}</li>`).join('');
+        }
+
+        function showError(message) {
+            const container = document.querySelector('.container');
+            container.innerHTML = `
+                <div style="text-align: center; padding: 50px; color: #e74c3c;">
+                    <h2>❌ Error</h2>
+                    <p>${message}</p>
+                    <button class="btn" onclick="location.reload()">🔄 Reintentar</button>
+                </div>
+            `;
+        }
+
+        async function refreshMetrics() {
+            await loadMetrics();
+        }
+
+        // Cargar métricas al iniciar
+        document.addEventListener('DOMContentLoaded', loadMetrics);
+
+        // Auto-refresh cada 5 minutos
+        setInterval(loadMetrics, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
