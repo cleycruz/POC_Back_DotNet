@@ -8,7 +8,16 @@
     "dev": "node node_modules/@angular/cli/bin/ng.js serve --port 4200 --open",
     "build": "node node_modules/@angular/cli/bin/ng.js build",
     "watch": "node node_modules/@angular/cli/bin/ng.js build --watch --configuration development",
-    "test": "node node_modules/@angular/cli/bin/ng.js test"
+    "test": "node node_modules/@angular/cli/bin/ng.js test",
+    "start:dev": "node node_modules/@angular/cli/bin/ng.js serve --configuration development --port 4200",
+    "start:test": "node node_modules/@angular/cli/bin/ng.js serve --configuration test --port 4201",
+    "start:staging": "node node_modules/@angular/cli/bin/ng.js serve --configuration staging --port 4202", 
+    "start:prod": "node node_modules/@angular/cli/bin/ng.js serve --configuration production --port 4203",
+    "build:dev": "node node_modules/@angular/cli/bin/ng.js build --configuration development",
+    "build:test": "node node_modules/@angular/cli/bin/ng.js build --configuration test",
+    "build:staging": "node node_modules/@angular/cli/bin/ng.js build --configuration staging",
+    "build:prod": "node node_modules/@angular/cli/bin/ng.js build --configuration production",
+    "analyze": "node node_modules/@angular/cli/bin/ng.js build --configuration production --stats-json && npx webpack-bundle-analyzer dist/carrito-app/stats.json"
   },
   "private": true,
   "dependencies": {

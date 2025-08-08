@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, retry } from 'rxjs/operators';
+import { Observable, throwError, of } from 'rxjs';
+import { catchError, retry, map } from 'rxjs/operators';
 import { ProductoDto, CrearProductoDto, ActualizarProductoDto } from '../../application/dtos/carrito.dto';
+import { ConfigService } from '../../core/services/config.service';
 
 /**
  * Servicio HTTP para productos
@@ -12,21 +13,23 @@ import { ProductoDto, CrearProductoDto, ActualizarProductoDto } from '../../appl
   providedIn: 'root'
 })
 export class ProductosHttpService {
-  private readonly baseUrl = 'http://localhost:5063/api/productos';
-  
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
     })
   };
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly configService: ConfigService
+  ) {}
 
   /**
    * Obtiene todos los productos
    */
   public getProductos(): Observable<ProductoDto[]> {
-    return this.http.get<ProductoDto[]>(this.baseUrl)
+    const url = this.configService.getApiUrl('productos');
+    return this.http.get<ProductoDto[]>(url)
       .pipe(
         retry(2),
         catchError(this.handleError)
@@ -37,7 +40,8 @@ export class ProductosHttpService {
    * Obtiene un producto por ID
    */
   public getProducto(id: number): Observable<ProductoDto> {
-    return this.http.get<ProductoDto>(`${this.baseUrl}/${id}`)
+    const url = this.configService.getApiUrl(`productos/${id}`);
+    return this.http.get<ProductoDto>(url)
       .pipe(
         retry(2),
         catchError(this.handleError)
@@ -48,7 +52,8 @@ export class ProductosHttpService {
    * Busca productos por nombre
    */
   public buscarProductos(nombre: string): Observable<ProductoDto[]> {
-    return this.http.get<ProductoDto[]>(`${this.baseUrl}/buscar`, {
+    const url = this.configService.getApiUrl('productos/buscar');
+    return this.http.get<ProductoDto[]>(url, {
       params: { nombre }
     }).pipe(
       retry(2),
@@ -60,7 +65,8 @@ export class ProductosHttpService {
    * Obtiene productos por categoría
    */
   public getProductosPorCategoria(categoria: string): Observable<ProductoDto[]> {
-    return this.http.get<ProductoDto[]>(`${this.baseUrl}/categoria/${categoria}`)
+    const url = this.configService.getApiUrl(`productos/categoria/${categoria}`);
+    return this.http.get<ProductoDto[]>(url)
       .pipe(
         retry(2),
         catchError(this.handleError)
@@ -71,7 +77,8 @@ export class ProductosHttpService {
    * Obtiene productos disponibles
    */
   public getProductosDisponibles(): Observable<ProductoDto[]> {
-    return this.http.get<ProductoDto[]>(`${this.baseUrl}/disponibles`)
+    const url = this.configService.getApiUrl('productos/disponibles');
+    return this.http.get<ProductoDto[]>(url)
       .pipe(
         retry(2),
         catchError(this.handleError)
@@ -82,7 +89,8 @@ export class ProductosHttpService {
    * Crea un nuevo producto
    */
   public crearProducto(producto: CrearProductoDto): Observable<ProductoDto> {
-    return this.http.post<ProductoDto>(this.baseUrl, producto, this.httpOptions)
+    const url = this.configService.getApiUrl('productos');
+    return this.http.post<ProductoDto>(url, producto, this.httpOptions)
       .pipe(
         catchError(this.handleError)
       );
@@ -92,7 +100,8 @@ export class ProductosHttpService {
    * Actualiza un producto existente
    */
   public actualizarProducto(id: number, producto: ActualizarProductoDto): Observable<ProductoDto> {
-    return this.http.put<ProductoDto>(`${this.baseUrl}/${id}`, producto, this.httpOptions)
+    const url = this.configService.getApiUrl(`productos/${id}`);
+    return this.http.put<ProductoDto>(url, producto, this.httpOptions)
       .pipe(
         catchError(this.handleError)
       );
@@ -102,7 +111,8 @@ export class ProductosHttpService {
    * Elimina un producto
    */
   public eliminarProducto(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`)
+    const url = this.configService.getApiUrl(`productos/${id}`);
+    return this.http.delete<void>(url)
       .pipe(
         catchError(this.handleError)
       );
@@ -112,10 +122,12 @@ export class ProductosHttpService {
    * Verifica si un producto existe
    */
   public existeProducto(id: number): Observable<boolean> {
-    return this.http.head(`${this.baseUrl}/${id}`)
+    const url = this.configService.getApiUrl(`productos/${id}`);
+    return this.http.get<ProductoDto>(url)
       .pipe(
-        catchError(() => throwError(() => false))
-      ) as Observable<boolean>;
+        map(() => true), // Si la petición es exitosa, el producto existe
+        catchError(() => of(false)) // Si hay error, el producto no existe
+      );
   }
 
   /**
