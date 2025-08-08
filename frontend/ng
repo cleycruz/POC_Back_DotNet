@@ -1,0 +1,3 @@
+#!/bin/bash
+# Angular CLI wrapper script
+exec ./node_modules/.bin/ng "$@"
