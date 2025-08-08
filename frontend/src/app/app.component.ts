@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CarritoService } from './services/carrito.service';
 import { CarritoDto } from './models/carrito.models';
+import { ConfigService } from './core/services/config.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -13,7 +14,10 @@ export class AppComponent implements OnInit, OnDestroy {
   carrito: CarritoDto | null = null;
   private carritoSubscription?: Subscription;
 
-  constructor(private readonly carritoService: CarritoService) { }
+  constructor(
+    private readonly carritoService: CarritoService,
+    private readonly configService: ConfigService
+  ) { }
 
   ngOnInit(): void {
     // Suscribirse a los cambios del carrito
@@ -45,5 +49,14 @@ export class AppComponent implements OnInit, OnDestroy {
       return 0;
     }
     return this.carrito.items.reduce((total, item) => total + item.cantidad, 0);
+  }
+
+  getServerUrl(): string {
+    try {
+      return this.configService.api.baseUrl;
+    } catch (error) {
+      console.error('Error al obtener URL del servidor:', error);
+      return 'Servidor no disponible';
+    }
   }
 }

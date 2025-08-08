@@ -11,13 +11,12 @@ import {
   ActualizarCantidadDto,
   CarritoItemDto
 } from '../models/carrito.models';
+import { ConfigService } from '../core/services/config.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CarritoService {
-  private readonly baseUrl = 'http://localhost:5063/api';
-  
   private readonly httpOptions = {
     headers: new HttpHeaders({
       'Content-Type': 'application/json'
@@ -28,7 +27,10 @@ export class CarritoService {
   private readonly carritoSubject = new BehaviorSubject<CarritoDto | null>(null);
   public carrito$ = this.carritoSubject.asObservable();
 
-  constructor(private readonly http: HttpClient) { }
+  constructor(
+    private readonly http: HttpClient,
+    private readonly configService: ConfigService
+  ) { }
 
   // Método privado para actualizar el subject del carrito
   private updateCarritoSubject(carrito: CarritoDto | null): void {
@@ -37,68 +39,82 @@ export class CarritoService {
 
   // Productos
   getProductos(): Observable<ProductoDto[]> {
-    return this.http.get<ProductoDto[]>(`${this.baseUrl}/productos`);
+    const url = this.configService.getApiUrl('productos');
+    return this.http.get<ProductoDto[]>(url);
   }
 
   getProducto(id: number): Observable<ProductoDto> {
-    return this.http.get<ProductoDto>(`${this.baseUrl}/productos/${id}`);
+    const url = this.configService.getApiUrl(`productos/${id}`);
+    return this.http.get<ProductoDto>(url);
   }
 
   getProductosByCategoria(categoria: string): Observable<ProductoDto[]> {
-    return this.http.get<ProductoDto[]>(`${this.baseUrl}/productos/categoria/${categoria}`);
+    const url = this.configService.getApiUrl(`productos/categoria/${categoria}`);
+    return this.http.get<ProductoDto[]>(url);
   }
 
   createProducto(producto: CrearProductoDto): Observable<ProductoDto> {
-    return this.http.post<ProductoDto>(`${this.baseUrl}/productos`, producto, this.httpOptions);
+    const url = this.configService.getApiUrl('productos');
+    return this.http.post<ProductoDto>(url, producto, this.httpOptions);
   }
 
   updateProducto(id: number, producto: ActualizarProductoDto): Observable<ProductoDto> {
-    return this.http.put<ProductoDto>(`${this.baseUrl}/productos/${id}`, producto, this.httpOptions);
+    const url = this.configService.getApiUrl(`productos/${id}`);
+    return this.http.put<ProductoDto>(url, producto, this.httpOptions);
   }
 
   deleteProducto(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/productos/${id}`);
+    const url = this.configService.getApiUrl(`productos/${id}`);
+    return this.http.delete<void>(url);
   }
 
   // Carrito
   getCarrito(usuarioId: string): Observable<CarritoDto> {
-    return this.http.get<CarritoDto>(`${this.baseUrl}/carrito/${usuarioId}`).pipe(
+    const url = this.configService.getApiUrl(`carrito/${usuarioId}`);
+    return this.http.get<CarritoDto>(url).pipe(
       tap(carrito => this.updateCarritoSubject(carrito))
     );
   }
 
   getCarritoTotal(usuarioId: string): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/carrito/${usuarioId}/total`);
+    const url = this.configService.getApiUrl(`carrito/${usuarioId}/total`);
+    return this.http.get<number>(url);
   }
 
   getCarritoResumen(usuarioId: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/carrito/${usuarioId}/resumen`);
+    const url = this.configService.getApiUrl(`carrito/${usuarioId}/resumen`);
+    return this.http.get<any>(url);
   }
 
   getCarritoItems(usuarioId: string): Observable<CarritoItemDto[]> {
-    return this.http.get<CarritoItemDto[]>(`${this.baseUrl}/carrito/${usuarioId}/items`);
+    const url = this.configService.getApiUrl(`carrito/${usuarioId}/items`);
+    return this.http.get<CarritoItemDto[]>(url);
   }
 
   addToCarrito(usuarioId: string, request: AgregarItemCarritoDto): Observable<CarritoDto> {
-    return this.http.post<CarritoDto>(`${this.baseUrl}/carrito/${usuarioId}/items`, request, this.httpOptions).pipe(
+    const url = this.configService.getApiUrl(`carrito/${usuarioId}/items`);
+    return this.http.post<CarritoDto>(url, request, this.httpOptions).pipe(
       tap(carrito => this.updateCarritoSubject(carrito))
     );
   }
 
   updateCarritoItem(usuarioId: string, productoId: number, request: ActualizarCantidadDto): Observable<CarritoDto> {
-    return this.http.put<CarritoDto>(`${this.baseUrl}/carrito/${usuarioId}/items/${productoId}`, request, this.httpOptions).pipe(
+    const url = this.configService.getApiUrl(`carrito/${usuarioId}/items/${productoId}`);
+    return this.http.put<CarritoDto>(url, request, this.httpOptions).pipe(
       tap(carrito => this.updateCarritoSubject(carrito))
     );
   }
 
   removeFromCarrito(usuarioId: string, productoId: number): Observable<CarritoDto> {
-    return this.http.delete<CarritoDto>(`${this.baseUrl}/carrito/${usuarioId}/items/${productoId}`).pipe(
+    const url = this.configService.getApiUrl(`carrito/${usuarioId}/items/${productoId}`);
+    return this.http.delete<CarritoDto>(url).pipe(
       tap(carrito => this.updateCarritoSubject(carrito))
     );
   }
 
   clearCarrito(usuarioId: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/carrito/${usuarioId}`).pipe(
+    const url = this.configService.getApiUrl(`carrito/${usuarioId}`);
+    return this.http.delete<void>(url).pipe(
       tap(() => this.updateCarritoSubject(null))
     );
   }

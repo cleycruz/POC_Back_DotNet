@@ -4,8 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ICarritoRepository } from '../../domain/repositories/carrito.repository.interface';
 import { Carrito } from '../../domain/entities/carrito.entity';
 import { CarritoId } from '../../domain/value-objects/carrito-id.vo';
-import { CarritoDto } from '../../application/dtos/carrito.dto';
-import { CarritoMapper } from '../adapters/carrito.mapper';
+import { ConfigService } from '../../core/services/config.service';
 
 /**
  * Implementación HTTP del repositorio de carrito
@@ -14,18 +13,21 @@ import { CarritoMapper } from '../adapters/carrito.mapper';
   providedIn: 'root'
 })
 export class HttpCarritoRepository implements ICarritoRepository {
-  private readonly baseUrl = 'http://localhost:5063/api/carrito';
   private carritoActivo: Carrito | null = null;
 
   constructor(
     private readonly http: HttpClient,
-    private readonly mapper: CarritoMapper
+    private readonly configService: ConfigService
   ) {}
+
+  private getUrl(endpoint: string = ''): string {
+    return this.configService.getApiUrl(`carrito${endpoint ? '/' + endpoint : ''}`);
+  }
 
   async findById(id: CarritoId): Promise<Carrito | null> {
     try {
       const dto = await firstValueFrom(
-        this.http.get<CarritoDto>(`${this.baseUrl}/${id.value}`)
+        this.http.get<CarritoDto>(this.getUrl(id.value.toString()))
       );
       return this.mapper.toDomain(dto);
     } catch (error) {
@@ -43,7 +45,7 @@ export class HttpCarritoRepository implements ICarritoRepository {
 
       // Intentar obtener carrito activo del servidor
       const dto = await firstValueFrom(
-        this.http.get<CarritoDto>(`${this.baseUrl}/activo`)
+        this.http.get<CarritoDto>(this.getUrl('activo'))
       );
       
       this.carritoActivo = this.mapper.toDomain(dto);
@@ -61,12 +63,12 @@ export class HttpCarritoRepository implements ICarritoRepository {
       if (carrito.id.value > 0) {
         // Actualizar carrito existente
         await firstValueFrom(
-          this.http.put(`${this.baseUrl}/${carrito.id.value}`, dto)
+          this.http.put(this.getUrl(carrito.id.value.toString()), dto)
         );
       } else {
         // Crear nuevo carrito
         const nuevoCarritoDto = await firstValueFrom(
-          this.http.post<CarritoDto>(this.baseUrl, dto)
+          this.http.post<CarritoDto>(this.getUrl(), dto)
         );
         // Actualizar el carrito activo con el ID del servidor
         this.carritoActivo = this.mapper.toDomain(nuevoCarritoDto);
@@ -80,11 +82,11 @@ export class HttpCarritoRepository implements ICarritoRepository {
   async delete(id: CarritoId): Promise<void> {
     try {
       await firstValueFrom(
-        this.http.delete(`${this.baseUrl}/${id.value}`)
+        this.http.delete(this.getUrl(id.value.toString()))
       );
       
       // Si eliminamos el carrito activo, limpiarlo de memoria
-      if (this.carritoActivo && this.carritoActivo.id.equals(id)) {
+      if (this.carritoActivo?.id.equals(id)) {
         this.carritoActivo = null;
       }
     } catch (error) {
@@ -99,11 +101,11 @@ export class HttpCarritoRepository implements ICarritoRepository {
       const dto = this.mapper.toDto(nuevoCarrito);
       
       const carritoCreado = await firstValueFrom(
-        this.http.post<CarritoDto>(this.baseUrl, dto)
+        this.http.post<CarritoDto>(this.getUrl(), dto)
       );
       
       this.carritoActivo = this.mapper.toDomain(carritoCreado);
-      return this.carritoActivo;
+      return this.carritoActivo!;
     } catch (error) {
       console.error('Error al crear carrito:', error);
       throw new Error('No se pudo crear el carrito');
@@ -113,7 +115,7 @@ export class HttpCarritoRepository implements ICarritoRepository {
   async exists(id: CarritoId): Promise<boolean> {
     try {
       await firstValueFrom(
-        this.http.head(`${this.baseUrl}/${id.value}`)
+        this.http.head(this.getUrl(id.value.toString()))
       );
       return true;
     } catch (error) {

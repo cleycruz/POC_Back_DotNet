@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, firstValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { IProductoRepository } from '../../domain/repositories/producto.repository.interface';
 import { Producto } from '../../domain/entities/producto.entity';
 import { ProductoId } from '../../domain/value-objects/producto-id.vo';
-import { ProductoDto } from '../../application/dtos/carrito.dto';
-import { ProductoMapper } from '../adapters/producto.mapper';
+import { Dinero } from '../../domain/value-objects/dinero.vo';
+import { Stock } from '../../domain/value-objects/stock.vo';
+import { ConfigService } from '../../core/services/config.service';
 
 /**
  * Implementación HTTP del repositorio de productos
@@ -14,19 +15,37 @@ import { ProductoMapper } from '../adapters/producto.mapper';
   providedIn: 'root'
 })
 export class HttpProductoRepository implements IProductoRepository {
-  private readonly baseUrl = 'http://localhost:5063/api/productos';
 
   constructor(
     private readonly http: HttpClient,
-    private readonly mapper: ProductoMapper
+    private readonly configService: ConfigService
   ) {}
+
+  private getUrl(endpoint: string = ''): string {
+    return this.configService.getApiUrl(`productos${endpoint ? '/' + endpoint : ''}`);
+  }
+
+  private mapFromDto(dto: any): Producto {
+    return new Producto(
+      new ProductoId(dto.id),
+      {
+        nombre: dto.nombre,
+        descripcion: dto.descripcion,
+        precio: Dinero.create(dto.precio),
+        stock: Stock.create(dto.stock),
+        categoria: dto.categoria,
+        fechaCreacion: new Date(dto.fechaCreacion || new Date()),
+        fechaActualizacion: dto.fechaActualizacion ? new Date(dto.fechaActualizacion) : undefined
+      }
+    );
+  }
 
   async findById(id: ProductoId): Promise<Producto | null> {
     try {
-      const dto = await firstValueFrom(
-        this.http.get<ProductoDto>(`${this.baseUrl}/${id.value}`)
+      const response = await firstValueFrom(
+        this.http.get<any>(this.getUrl(id.value.toString()))
       );
-      return this.mapper.toDomain(dto);
+      return this.mapFromDto(response);
     } catch (error) {
       console.error('Error al obtener producto por ID:', error);
       return null;
@@ -35,10 +54,10 @@ export class HttpProductoRepository implements IProductoRepository {
 
   async findAll(): Promise<Producto[]> {
     try {
-      const dtos = await firstValueFrom(
-        this.http.get<ProductoDto[]>(this.baseUrl)
+      const response = await firstValueFrom(
+        this.http.get<any[]>(this.getUrl())
       );
-      return dtos.map(dto => this.mapper.toDomain(dto));
+      return response.map(dto => this.mapFromDto(dto));
     } catch (error) {
       console.error('Error al obtener productos:', error);
       return [];
@@ -47,12 +66,10 @@ export class HttpProductoRepository implements IProductoRepository {
 
   async findByNombre(nombre: string): Promise<Producto[]> {
     try {
-      const dtos = await firstValueFrom(
-        this.http.get<ProductoDto[]>(`${this.baseUrl}/buscar`, {
-          params: { nombre }
-        })
+      const response = await firstValueFrom(
+        this.http.get<any[]>(this.getUrl(`buscar?nombre=${encodeURIComponent(nombre)}`))
       );
-      return dtos.map(dto => this.mapper.toDomain(dto));
+      return response.map(dto => this.mapFromDto(dto));
     } catch (error) {
       console.error('Error al buscar productos por nombre:', error);
       return [];
@@ -61,10 +78,10 @@ export class HttpProductoRepository implements IProductoRepository {
 
   async findByCategoria(categoria: string): Promise<Producto[]> {
     try {
-      const dtos = await firstValueFrom(
-        this.http.get<ProductoDto[]>(`${this.baseUrl}/categoria/${categoria}`)
+      const response = await firstValueFrom(
+        this.http.get<any[]>(this.getUrl(`categoria/${categoria}`))
       );
-      return dtos.map(dto => this.mapper.toDomain(dto));
+      return response.map(dto => this.mapFromDto(dto));
     } catch (error) {
       console.error('Error al buscar productos por categoría:', error);
       return [];
@@ -73,10 +90,10 @@ export class HttpProductoRepository implements IProductoRepository {
 
   async findDisponibles(): Promise<Producto[]> {
     try {
-      const dtos = await firstValueFrom(
-        this.http.get<ProductoDto[]>(`${this.baseUrl}/disponibles`)
+      const response = await firstValueFrom(
+        this.http.get<any[]>(this.getUrl('disponibles'))
       );
-      return dtos.map(dto => this.mapper.toDomain(dto));
+      return response.map(dto => this.mapFromDto(dto));
     } catch (error) {
       console.error('Error al obtener productos disponibles:', error);
       return [];
@@ -85,17 +102,24 @@ export class HttpProductoRepository implements IProductoRepository {
 
   async save(producto: Producto): Promise<void> {
     try {
-      const dto = this.mapper.toDto(producto);
-      
+      const dto = {
+        id: producto.id.value,
+        nombre: producto.nombre,
+        precio: producto.precio.value,
+        descripcion: producto.descripcion,
+        categoria: producto.categoria,
+        stock: producto.stock.value,
+        fechaCreacion: producto.fechaCreacion,
+        fechaActualizacion: producto.fechaActualizacion
+      };
+
       if (producto.id.value > 0) {
-        // Actualizar
         await firstValueFrom(
-          this.http.put(`${this.baseUrl}/${producto.id.value}`, dto)
+          this.http.put(this.getUrl(producto.id.value.toString()), dto)
         );
       } else {
-        // Crear
         await firstValueFrom(
-          this.http.post(this.baseUrl, dto)
+          this.http.post(this.getUrl(), dto)
         );
       }
     } catch (error) {
@@ -107,7 +131,7 @@ export class HttpProductoRepository implements IProductoRepository {
   async delete(id: ProductoId): Promise<void> {
     try {
       await firstValueFrom(
-        this.http.delete(`${this.baseUrl}/${id.value}`)
+        this.http.delete(this.getUrl(id.value.toString()))
       );
     } catch (error) {
       console.error('Error al eliminar producto:', error);
@@ -118,10 +142,11 @@ export class HttpProductoRepository implements IProductoRepository {
   async exists(id: ProductoId): Promise<boolean> {
     try {
       await firstValueFrom(
-        this.http.head(`${this.baseUrl}/${id.value}`)
+        this.http.head(this.getUrl(id.value.toString()))
       );
       return true;
     } catch (error) {
+      console.error('Error al verificar existencia de producto:', error);
       return false;
     }
   }
