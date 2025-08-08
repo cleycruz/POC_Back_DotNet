@@ -474,3 +474,139 @@ logs/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# ===================================================
+# ANGULAR / NODE.JS / FRONTEND
+# ===================================================
+
+# Dependencies
+frontend/node_modules/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Angular build outputs
+frontend/dist/
+frontend/.angular/
+frontend/.nx/
+
+# Angular cache
+frontend/.angular/cache/
+.angular/
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# IDE - WebStorm
+frontend/.idea/
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Angular CLI cache
+frontend/.angular/cache/
+
+# Webpack Bundle Analyzer
+frontend/bundle-report.html
+
+# Coverage reports
+frontend/coverage/
+coverage/
+
+# E2E test reports
+frontend/e2e/reports/
+
+# Storybook build outputs
+frontend/storybook-static/
+
+# Angular Universal
+frontend/dist-server/
+
+# Compodoc
+frontend/documentation/
+
+# Angular DevKit
+.ng_build/
+.ng_pkg_build/
+
+# Angular Material
+frontend/.angular-material/
+
+# ESLint and Prettier
+.eslintrc.local.js
+.prettierrc.local.js
+
+# Sass cache
+.sass-cache/
+
+# Angular i18n
+frontend/src/locale/
+
+# Local SSL certificates (if any)
+frontend/ssl/
+*.key
+*.crt
+*.pem
+
+# PWA service worker cache
+frontend/ngsw-config.json.backup
+
+# Angular workspace file backup
+frontend/angular.json.backup
+
+# Local development scripts
+frontend/*.local.sh
+frontend/*.local.bat
+
+# Angular CLI wrapper (KEEP THIS FILE)
+!frontend/ng
