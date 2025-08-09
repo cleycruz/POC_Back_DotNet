@@ -1,5 +1,6 @@
 using FluentValidation;
 using CarritoComprasAPI.Core.Ports;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Validators
 {

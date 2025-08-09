@@ -4,6 +4,7 @@ using CarritoComprasAPI.Core.Domain.Events.Carrito;
 using CarritoComprasAPI.Core.EventSourcing.Events;
 using CarritoComprasAPI.Core.EventSourcing.Store;
 using CarritoComprasAPI.Core.Ports;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.EventSourcing
 {
@@ -245,7 +246,7 @@ namespace CarritoComprasAPI.Core.EventSourcing
             {
                 ProductoCreado or ProductoActualizado or ProductoEliminado => "Producto",
                 CarritoCreado or ItemAgregadoAlCarrito or ItemEliminadoDelCarrito or CarritoVaciado or CantidadItemCarritoActualizada => "Carrito",
-                _ => domainEvent.GetType().Name.Replace("Event", "").Replace("Evento", "")
+                _ => domainEvent.GetType().Name.Replace("Event", "", StringComparison.OrdinalIgnoreCase).Replace("Evento", "", StringComparison.OrdinalIgnoreCase)
             };
         }
 

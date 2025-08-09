@@ -1,4 +1,5 @@
 using CarritoComprasAPI.Core.Caching;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Configuration
 {

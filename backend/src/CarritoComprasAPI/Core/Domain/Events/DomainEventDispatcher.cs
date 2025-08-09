@@ -1,5 +1,6 @@
 using CarritoComprasAPI.Core.Domain.Events;
 using CarritoComprasAPI.Core.Ports;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Domain.Events
 {

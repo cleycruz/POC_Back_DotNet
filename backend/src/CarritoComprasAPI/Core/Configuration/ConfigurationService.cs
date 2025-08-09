@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Options;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Configuration;
 

@@ -1,5 +1,6 @@
 using CarritoComprasAPI.Core.Performance;
 using CarritoComprasAPI.Core.Logging;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Alerting
 {

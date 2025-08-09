@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <!-- Configuración global para todos los proyectos -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    
+    <!-- Suprimir warnings CLS Compliance - no necesarios para API Web moderna -->
+    <NoWarn>$(NoWarn);CS3001;CS3002;CS3009;CS3016</NoWarn>
+    
+    <!-- Suprimir warnings CA1002 de List<T> - aceptables en DTOs y modelos de API Web -->
+    <NoWarn>$(NoWarn);CA1002</NoWarn>
+    
+    <!-- Suprimir warnings nullable específicos en tests -->
+    <NoWarn Condition="$(MSBuildProjectName.Contains('Test'))">$(NoWarn);CS8602;CS8604;CS8618</NoWarn>
+  </PropertyGroup>
+</Project>

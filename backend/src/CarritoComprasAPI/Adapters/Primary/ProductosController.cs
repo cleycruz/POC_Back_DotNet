@@ -6,6 +6,7 @@ using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Logging;
 using CarritoComprasAPI.Core.Configuration;
 using CarritoComprasAPI.DTOs;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Adapters.Primary
 {

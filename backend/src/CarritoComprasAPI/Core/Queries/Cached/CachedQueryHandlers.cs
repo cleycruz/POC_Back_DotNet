@@ -4,6 +4,7 @@ using CarritoComprasAPI.Core.Caching;
 using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Ports;
 using CarritoComprasAPI.DTOs;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Queries.Cached
 {

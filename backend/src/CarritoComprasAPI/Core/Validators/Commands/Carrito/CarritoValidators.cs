@@ -1,6 +1,7 @@
 using FluentValidation;
 using CarritoComprasAPI.Core.Commands.Carrito;
 using CarritoComprasAPI.Core.Validators.Common;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Validators.Commands.Carrito
 {

@@ -1,4 +1,5 @@
 using CarritoComprasAPI.Core.Domain.ValueObjects;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Domain
 {

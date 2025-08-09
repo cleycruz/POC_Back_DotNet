@@ -8,8 +8,8 @@ export const environment: EnvironmentConfig = {
   
   // API Configuration
   api: {
-    baseUrl: 'https://localhost:7005/api', // Backend .NET HTTPS port
-    // Alternative: 'http://localhost:5063/api' (HTTP port if HTTPS fails)
+    baseUrl: 'http://localhost:5063/', // Backend .NET HTTPS port
+    // Alternative: 'https://localhost:7005/api' (HTTP port if HTTPS fails)
     timeout: 30000,
     retryAttempts: 3,
     version: 'v1'

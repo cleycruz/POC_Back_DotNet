@@ -1,4 +1,5 @@
 using CarritoComprasAPI.Core.Configuration;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Domain.ValueObjects
 {
@@ -53,14 +54,14 @@ namespace CarritoComprasAPI.Core.Domain.ValueObjects
             
             if (nombreTrimmed.Length < BusinessConstants.PRODUCTO_NOMBRE_LONGITUD_MINIMA)
                 throw new ArgumentException(
-                    string.Format(BusinessConstants.ValidationMessages.PRODUCTO_NOMBRE_LONGITUD_INVALIDA, 
+                    string.Format(CultureInfo.InvariantCulture, BusinessConstants.ValidationMessages.PRODUCTO_NOMBRE_LONGITUD_INVALIDA, 
                         BusinessConstants.PRODUCTO_NOMBRE_LONGITUD_MINIMA, 
                         BusinessConstants.PRODUCTO_NOMBRE_LONGITUD_MAXIMA), 
                     nameof(valor));
             
             if (nombreTrimmed.Length > BusinessConstants.PRODUCTO_NOMBRE_LONGITUD_MAXIMA)
                 throw new ArgumentException(
-                    string.Format(BusinessConstants.ValidationMessages.PRODUCTO_NOMBRE_LONGITUD_INVALIDA, 
+                    string.Format(CultureInfo.InvariantCulture, BusinessConstants.ValidationMessages.PRODUCTO_NOMBRE_LONGITUD_INVALIDA, 
                         BusinessConstants.PRODUCTO_NOMBRE_LONGITUD_MINIMA, 
                         BusinessConstants.PRODUCTO_NOMBRE_LONGITUD_MAXIMA), 
                     nameof(valor));
@@ -129,14 +130,14 @@ namespace CarritoComprasAPI.Core.Domain.ValueObjects
         {
             if (valor < BusinessConstants.PRODUCTO_PRECIO_MINIMO)
                 throw new ArgumentException(
-                    string.Format(BusinessConstants.ValidationMessages.PRODUCTO_PRECIO_INVALIDO, 
+                    string.Format(CultureInfo.InvariantCulture, BusinessConstants.ValidationMessages.PRODUCTO_PRECIO_INVALIDO, 
                         BusinessConstants.PRODUCTO_PRECIO_MINIMO, 
                         BusinessConstants.PRODUCTO_PRECIO_MAXIMO), 
                     nameof(valor));
                     
             if (valor > BusinessConstants.PRODUCTO_PRECIO_MAXIMO)
                 throw new ArgumentException(
-                    string.Format(BusinessConstants.ValidationMessages.PRODUCTO_PRECIO_INVALIDO, 
+                    string.Format(CultureInfo.InvariantCulture, BusinessConstants.ValidationMessages.PRODUCTO_PRECIO_INVALIDO, 
                         BusinessConstants.PRODUCTO_PRECIO_MINIMO, 
                         BusinessConstants.PRODUCTO_PRECIO_MAXIMO), 
                     nameof(valor));
@@ -160,7 +161,7 @@ namespace CarritoComprasAPI.Core.Domain.ValueObjects
         /// Representación en string del precio con formato de moneda
         /// </summary>
         /// <returns>Precio formateado como moneda</returns>
-        public override string ToString() => Value.ToString("C");
+        public override string ToString() => Value.ToString("C", CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -208,13 +209,13 @@ namespace CarritoComprasAPI.Core.Domain.ValueObjects
         {
             if (valor < 0)
                 throw new ArgumentException(
-                    string.Format(BusinessConstants.ValidationMessages.PRODUCTO_STOCK_INVALIDO, 
+                    string.Format(CultureInfo.InvariantCulture, BusinessConstants.ValidationMessages.PRODUCTO_STOCK_INVALIDO, 
                         BusinessConstants.PRODUCTO_STOCK_MAXIMO), 
                     nameof(valor));
                     
             if (valor > BusinessConstants.PRODUCTO_STOCK_MAXIMO)
                 throw new ArgumentException(
-                    string.Format(BusinessConstants.ValidationMessages.PRODUCTO_STOCK_INVALIDO, 
+                    string.Format(CultureInfo.InvariantCulture, BusinessConstants.ValidationMessages.PRODUCTO_STOCK_INVALIDO, 
                         BusinessConstants.PRODUCTO_STOCK_MAXIMO), 
                     nameof(valor));
 
@@ -266,7 +267,7 @@ namespace CarritoComprasAPI.Core.Domain.ValueObjects
         /// Representación en string del stock
         /// </summary>
         /// <returns>Valor del stock como string</returns>
-        public override string ToString() => Value.ToString();
+        public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -317,7 +318,7 @@ namespace CarritoComprasAPI.Core.Domain.ValueObjects
             if (categoriaTrimmed.Length < BusinessConstants.CATEGORIA_NOMBRE_LONGITUD_MINIMA || 
                 categoriaTrimmed.Length > BusinessConstants.CATEGORIA_NOMBRE_LONGITUD_MAXIMA)
                 throw new ArgumentException(
-                    string.Format(BusinessConstants.ValidationMessages.CATEGORIA_NOMBRE_INVALIDO, 
+                    string.Format(CultureInfo.InvariantCulture, BusinessConstants.ValidationMessages.CATEGORIA_NOMBRE_INVALIDO, 
                         BusinessConstants.CATEGORIA_NOMBRE_LONGITUD_MINIMA, 
                         BusinessConstants.CATEGORIA_NOMBRE_LONGITUD_MAXIMA), 
                     nameof(valor));
@@ -456,14 +457,14 @@ namespace CarritoComprasAPI.Core.Domain.ValueObjects
         {
             if (valor < BusinessConstants.CARRITO_CANTIDAD_MINIMA)
                 throw new ArgumentException(
-                    string.Format(BusinessConstants.ValidationMessages.CARRITO_CANTIDAD_INVALIDA, 
+                    string.Format(CultureInfo.InvariantCulture, BusinessConstants.ValidationMessages.CARRITO_CANTIDAD_INVALIDA, 
                         BusinessConstants.CARRITO_CANTIDAD_MINIMA, 
                         BusinessConstants.CARRITO_CANTIDAD_MAXIMA), 
                     nameof(valor));
 
             if (valor > BusinessConstants.CARRITO_CANTIDAD_MAXIMA)
                 throw new ArgumentException(
-                    string.Format(BusinessConstants.ValidationMessages.CARRITO_CANTIDAD_INVALIDA, 
+                    string.Format(CultureInfo.InvariantCulture, BusinessConstants.ValidationMessages.CARRITO_CANTIDAD_INVALIDA, 
                         BusinessConstants.CARRITO_CANTIDAD_MINIMA, 
                         BusinessConstants.CARRITO_CANTIDAD_MAXIMA), 
                     nameof(valor));
@@ -503,6 +504,6 @@ namespace CarritoComprasAPI.Core.Domain.ValueObjects
         /// Representación en string de la cantidad
         /// </summary>
         /// <returns>Valor de la cantidad como string</returns>
-        public override string ToString() => Value.ToString();
+        public override string ToString() => Value.ToString(CultureInfo.InvariantCulture);
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using CarritoComprasAPI.Core.EventSourcing;
 using CarritoComprasAPI.Core.EventSourcing.Store;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Adapters.Primary
 {

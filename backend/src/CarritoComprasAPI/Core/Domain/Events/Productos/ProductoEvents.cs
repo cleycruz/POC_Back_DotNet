@@ -1,4 +1,5 @@
 using CarritoComprasAPI.Core.Domain.Events;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Domain.Events.Productos
 {

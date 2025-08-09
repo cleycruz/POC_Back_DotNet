@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Metrics
 {
@@ -228,7 +229,7 @@ namespace CarritoComprasAPI.Core.Metrics
 
         private static void ProcessDomainCoverage(string line, Dictionary<string, decimal> componentCoverage)
         {
-            if (line.Contains("CarritoComprasAPI.Core.Domain.", StringComparison.OrdinalIgnoreCase) && line.Contains("%"))
+            if (line.Contains("CarritoComprasAPI.Core.Domain.", StringComparison.OrdinalIgnoreCase) && line.Contains("%", StringComparison.OrdinalIgnoreCase))
             {
                 var match = System.Text.RegularExpressions.Regex.Match(line, @"([0-9]+\.?[0-9]*)%");
                 if (match.Success)
@@ -244,7 +245,7 @@ namespace CarritoComprasAPI.Core.Metrics
 
         private static void ProcessControllersCoverage(string line, Dictionary<string, decimal> componentCoverage)
         {
-            if (line.Contains("CarritoComprasAPI.Adapters.Primary.", StringComparison.OrdinalIgnoreCase) && line.Contains("%"))
+            if (line.Contains("CarritoComprasAPI.Adapters.Primary.", StringComparison.OrdinalIgnoreCase) && line.Contains("%", StringComparison.OrdinalIgnoreCase))
             {
                 var match = System.Text.RegularExpressions.Regex.Match(line, @"([0-9]+\.?[0-9]*)%");
                 if (match.Success)
@@ -459,18 +460,18 @@ namespace CarritoComprasAPI.Core.Metrics
             
             // Factores estimados basados en convenciones de nombres
             var conditionalComplexity = 0;
-            var methodName = method.Name.ToLower();
+            var methodName = method.Name.ToUpperInvariant();
             
-            if (methodName.Contains("if") || methodName.Contains("when") || methodName.Contains("validate"))
+            if (methodName.Contains("if", StringComparison.OrdinalIgnoreCase) || methodName.Contains("when", StringComparison.OrdinalIgnoreCase) || methodName.Contains("validate", StringComparison.OrdinalIgnoreCase))
                 conditionalComplexity += 2;
             
-            if (methodName.Contains("switch") || methodName.Contains("case"))
+            if (methodName.Contains("switch", StringComparison.OrdinalIgnoreCase) || methodName.Contains("case", StringComparison.OrdinalIgnoreCase))
                 conditionalComplexity += 3;
             
-            if (methodName.Contains("loop") || methodName.Contains("foreach") || methodName.Contains("while"))
+            if (methodName.Contains("loop", StringComparison.OrdinalIgnoreCase) || methodName.Contains("foreach", StringComparison.OrdinalIgnoreCase) || methodName.Contains("while", StringComparison.OrdinalIgnoreCase))
                 conditionalComplexity += 2;
             
-            if (methodName.Contains("try") || methodName.Contains("catch") || methodName.Contains("handle"))
+            if (methodName.Contains("try", StringComparison.OrdinalIgnoreCase) || methodName.Contains("catch", StringComparison.OrdinalIgnoreCase) || methodName.Contains("handle", StringComparison.OrdinalIgnoreCase))
                 conditionalComplexity += 1;
 
             await Task.Delay(1); // Simular análisis asíncrono

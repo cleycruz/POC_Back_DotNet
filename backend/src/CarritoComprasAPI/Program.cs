@@ -12,6 +12,7 @@ using CarritoComprasAPI.Core.UseCases;
 using CarritoComprasAPI.Core.Metrics;
 using FluentValidation;
 using System.Reflection;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 

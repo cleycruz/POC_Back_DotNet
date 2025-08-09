@@ -2,6 +2,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Caching
 {
@@ -185,7 +186,7 @@ namespace CarritoComprasAPI.Core.Caching
 
         public static string TodosLosProductos => $"{PRODUCTOS_PREFIX}:todos";
         public static string ProductoPorId(int id) => $"{PRODUCTOS_PREFIX}:id:{id}";
-        public static string ProductosPorCategoria(string categoria) => $"{PRODUCTOS_PREFIX}:categoria:{categoria.ToLowerInvariant()}";
+        public static string ProductosPorCategoria(string categoria) => $"{PRODUCTOS_PREFIX}:categoria:{categoria.ToUpperInvariant()}";
         public static string CarritoPorUsuario(string usuarioId) => $"{CARRITOS_PREFIX}:usuario:{usuarioId}";
         
         public static string ProductosPattern => $"{PRODUCTOS_PREFIX}:*";

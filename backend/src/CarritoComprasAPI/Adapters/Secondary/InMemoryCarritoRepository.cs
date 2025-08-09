@@ -1,5 +1,6 @@
 using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Ports;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Adapters.Secondary
 {

@@ -1,6 +1,7 @@
 using CarritoComprasAPI.Core.Commands;
 using CarritoComprasAPI.Core.Queries;
 using CarritoComprasAPI.Core.Domain.Events;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Mediator
 {

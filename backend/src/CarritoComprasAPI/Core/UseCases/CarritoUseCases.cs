@@ -2,6 +2,7 @@ using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Ports;
 using CarritoComprasAPI.Core.Performance;
 using CarritoComprasAPI.Core.Logging;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.UseCases
 {

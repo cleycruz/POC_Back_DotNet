@@ -3,6 +3,7 @@ using CarritoComprasAPI.Core.Domain.Events.Carrito;
 using CarritoComprasAPI.Core.Domain.Events;
 using CarritoComprasAPI.Core.Caching;
 using CarritoComprasAPI.Core.Ports;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.EventHandlers.Caching
 {

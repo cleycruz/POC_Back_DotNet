@@ -1,4 +1,5 @@
 using CarritoComprasAPI.Core.Ports;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Adapters.Secondary
 {
@@ -75,14 +76,14 @@ namespace CarritoComprasAPI.Adapters.Secondary
                 };
                 foreach (var placeholder in commonPlaceholders)
                 {
-                    if (args != null && formattedTemplate.Contains(placeholder) && placeholderIndex < args.Length)
+                    if (args != null && formattedTemplate.Contains(placeholder, StringComparison.OrdinalIgnoreCase) && placeholderIndex < args.Length)
                     {
-                        formattedTemplate = formattedTemplate.Replace(placeholder, $"{{{placeholderIndex}}}");
+                        formattedTemplate = formattedTemplate.Replace(placeholder, $"{{{placeholderIndex}}}", StringComparison.OrdinalIgnoreCase);
                         placeholderIndex++;
                     }
                 }
 
-                return args != null ? string.Format(formattedTemplate, args) : formattedTemplate;
+                return args != null ? string.Format(CultureInfo.InvariantCulture, formattedTemplate, args) : formattedTemplate;
             }
             catch
             {

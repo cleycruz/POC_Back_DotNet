@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Diagnostics;
 using CarritoComprasAPI.Core.Ports;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Logging
 {

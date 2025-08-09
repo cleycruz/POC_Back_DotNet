@@ -4,6 +4,7 @@ using CarritoComprasAPI.Core.Commands.Carrito;
 using CarritoComprasAPI.Core.Queries.Carrito;
 using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.DTOs;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Adapters.Primary
 {

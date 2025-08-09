@@ -1,4 +1,5 @@
 using FluentValidation;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Validators.Common
 {

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using CarritoComprasAPI.Core.Caching;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Adapters.Primary
 {
@@ -119,7 +120,7 @@ namespace CarritoComprasAPI.Adapters.Primary
                 CacheMisses = "N/A",
                 TotalKeys = "N/A",
                 MemoryUsage = "N/A",
-                Uptime = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+                Uptime = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
             });
         }
     }

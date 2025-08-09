@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using CarritoComprasAPI.Core.Performance;
 using CarritoComprasAPI.Core.Alerting;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Adapters.Primary
 {

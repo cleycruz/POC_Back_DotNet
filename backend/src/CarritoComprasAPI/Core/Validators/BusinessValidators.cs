@@ -1,5 +1,6 @@
 using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Ports;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Validators
 {
@@ -48,7 +49,7 @@ namespace CarritoComprasAPI.Core.Validators
             }
 
             // Validar categoría permitida
-            if (!_categoriasPermitidas.Contains(categoria, StringComparer.OrdinalIgnoreCase))
+            if (!_categoriasPermitidas.Any(c => string.Equals(c, categoria, StringComparison.OrdinalIgnoreCase)))
             {
                 errors.Add($"La categoría '{categoria}' no está permitida. Categorías válidas: {string.Join(", ", _categoriasPermitidas)}");
             }
@@ -88,7 +89,7 @@ namespace CarritoComprasAPI.Core.Validators
             }
 
             // Validar categoría permitida
-            if (!_categoriasPermitidas.Contains(categoria, StringComparer.OrdinalIgnoreCase))
+            if (!_categoriasPermitidas.Any(c => string.Equals(c, categoria, StringComparison.OrdinalIgnoreCase)))
             {
                 errors.Add($"La categoría '{categoria}' no está permitida. Categorías válidas: {string.Join(", ", _categoriasPermitidas)}");
             }

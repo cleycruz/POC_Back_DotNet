@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.EventSourcing
 {

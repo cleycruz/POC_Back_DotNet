@@ -3,6 +3,7 @@ using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Domain.Events;
 using CarritoComprasAPI.Core.Ports;
 using CarritoComprasAPI.Core.Validators;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Commands.Carrito
 {

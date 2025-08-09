@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using CarritoComprasAPI.Core.Logging;
 using FluentValidation;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Validators
 {

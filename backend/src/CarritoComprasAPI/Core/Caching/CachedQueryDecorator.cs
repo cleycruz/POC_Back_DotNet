@@ -2,6 +2,7 @@ using CarritoComprasAPI.Core.Queries;
 using CarritoComprasAPI.Core.Caching;
 using CarritoComprasAPI.Core.Ports;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Caching
 {
@@ -77,8 +78,8 @@ namespace CarritoComprasAPI.Core.Caching
         {
             return typeof(TQuery).Name switch
             {
-                var name when name.Contains("Producto") => _config.ProductosExpiration,
-                var name when name.Contains("Carrito") => _config.CarritosExpiration,
+                var name when name.Contains("Producto", StringComparison.OrdinalIgnoreCase) => _config.ProductosExpiration,
+                var name when name.Contains("Carrito", StringComparison.OrdinalIgnoreCase) => _config.CarritosExpiration,
                 _ => _config.DefaultExpiration
             };
         }

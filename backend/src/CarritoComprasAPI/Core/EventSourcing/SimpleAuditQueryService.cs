@@ -1,5 +1,6 @@
 using CarritoComprasAPI.Core.Ports;
 using CarritoComprasAPI.Core.EventSourcing.Store;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.EventSourcing
 {

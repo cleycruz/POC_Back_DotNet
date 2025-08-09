@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using CarritoComprasAPI.Core.Logging;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Performance
 {

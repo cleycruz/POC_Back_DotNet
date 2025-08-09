@@ -1,5 +1,6 @@
 using System.Text.Json;
 using CarritoComprasAPI.Core.Ports;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.EventSourcing.Store
 {

@@ -2,6 +2,7 @@ using CarritoComprasAPI.Core.Performance;
 using CarritoComprasAPI.Core.Alerting;
 using CarritoComprasAPI.Core.BackgroundServices;
 using CarritoComprasAPI.Core.Logging;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Configuration
 {

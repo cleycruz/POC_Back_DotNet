@@ -1,6 +1,7 @@
 using CarritoComprasAPI.Core.Domain.Events;
 using CarritoComprasAPI.Core.Domain.Events.Carrito;
 using CarritoComprasAPI.Core.Domain.ValueObjects;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Domain
 {

@@ -1,6 +1,7 @@
 using CarritoComprasAPI.Core.Queries;
 using CarritoComprasAPI.Core.Domain;
 using CarritoComprasAPI.Core.Ports;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Core.Queries.Carrito
 {

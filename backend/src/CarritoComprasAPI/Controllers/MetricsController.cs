@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using CarritoComprasAPI.Core.Metrics;
 using System.Text.Json;
+using System.Globalization;
 
 namespace CarritoComprasAPI.Controllers
 {
@@ -332,7 +333,7 @@ namespace CarritoComprasAPI.Controllers
                 ["Cobertura de Líneas"] = $"{coverage.LineCoverage:F1}%",
                 ["Índice Mantenibilidad"] = $"{report.MaintainabilityMetrics.MaintainabilityIndex:F0}",
                 ["Deuda Técnica"] = $"{debt.TotalDebtHours:F1}h",
-                ["Métodos Complejos"] = report.CyclomaticComplexity.HighComplexityMethods.Count.ToString(),
+                ["Métodos Complejos"] = report.CyclomaticComplexity.HighComplexityMethods.Count.ToString(CultureInfo.InvariantCulture),
                 ["Salud Arquitectónica"] = report.ArchitecturalMetrics.ArchitecturalHealth
             };
 
